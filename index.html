@@ -4,230 +4,45 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>คำนวณกำไร Shopee — Torque</title>
+
+<!-- Firebase SDKs -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+<!-- Excel Library -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<style>
-  :root {
-    --bg: #f5f4f0;
-    --surface: #ffffff;
-    --border: rgba(0,0,0,0.1);
-    --border-strong: rgba(0,0,0,0.2);
-    --text: #1a1a1a;
-    --text-muted: #6b6b6b;
-    --text-faint: #9a9a9a;
-    --accent: #e85d24;
-    --accent-light: #fef0ea;
-    --green: #1a7a4a;
-    --green-light: #e8f5ee;
-    --red: #c0392b;
-    --red-light: #fdecea;
-    --blue: #1a5fa8;
-    --blue-light: #e8f0fb;
-    --amber: #b45309;
-    --amber-light: #fef3c7;
-    --radius: 10px;
-    --radius-sm: 6px;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'Sarabun', 'Segoe UI', system-ui, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    font-size: 14px;
-    line-height: 1.6;
-  }
-  @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600&display=swap');
 
-  .app {
-    max-width: 960px;
-    margin: 0 auto;
-    padding: 24px 16px 48px;
-  }
-
-  .header {
-    margin-bottom: 28px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-  }
-  .header h1 { font-size: 22px; font-weight: 600; color: var(--text); }
-  .header p { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
-  .logo-badge {
-    background: var(--accent);
-    color: #fff;
-    font-size: 11px;
-    font-weight: 600;
-    padding: 4px 10px;
-    border-radius: 20px;
-    letter-spacing: 0.5px;
-  }
-
-  /* TABS */
-  .tabs { display: flex; gap: 0; margin-bottom: 20px; border-bottom: 1.5px solid var(--border); }
-  .tab {
-    padding: 9px 20px;
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    border: none;
-    background: transparent;
-    color: var(--text-muted);
-    border-bottom: 2px solid transparent;
-    margin-bottom: -1.5px;
-    transition: color .15s;
-  }
-  .tab:hover { color: var(--text); }
-  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-  .tab-content { display: none; }
-  .tab-content.active { display: block; }
-
-  /* CARDS */
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 20px 24px;
-    margin-bottom: 16px;
-  }
-  .card h3 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
-  .card .sub { font-size: 12px; color: var(--text-muted); margin-bottom: 16px; }
-
-  /* GRID */
-  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-  @media (max-width: 600px) { .grid2, .grid4 { grid-template-columns: 1fr 1fr; } }
-
-  /* METRICS */
-  .metric {
-    background: var(--bg);
-    border-radius: var(--radius-sm);
-    padding: 14px 16px;
-  }
-  .metric .label { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.4px; }
-  .metric .value { font-size: 22px; font-weight: 600; }
-  .metric .value.green { color: var(--green); }
-  .metric .value.red { color: var(--red); }
-  .metric .value.blue { color: var(--blue); }
-
-  /* UPLOAD */
-  .upload-area {
-    border: 1.5px dashed var(--border-strong);
-    border-radius: var(--radius);
-    padding: 20px;
-    text-align: center;
-    cursor: pointer;
-    transition: all .15s;
-    margin-bottom: 0;
-  }
-  .upload-area:hover { background: var(--bg); border-color: var(--accent); }
-  .upload-area.has-file { border-style: solid; border-color: var(--green); background: var(--green-light); }
-  .upload-area .icon { font-size: 22px; margin-bottom: 6px; }
-  .upload-area p { font-size: 12px; color: var(--text-muted); }
-  .upload-area.has-file p { color: var(--green); font-weight: 500; }
-  input[type=file] { display: none; }
-
-  /* BUTTONS */
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 16px;
-    font-size: 13px;
-    font-weight: 500;
-    border: 1px solid var(--border-strong);
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    background: var(--surface);
-    color: var(--text);
-    transition: background .15s;
-    font-family: inherit;
-  }
-  .btn:hover { background: var(--bg); }
-  .btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
-  .btn.primary:hover { opacity: .88; }
-  .btn:disabled { opacity: .4; cursor: not-allowed; }
-  .btn.sm { padding: 4px 10px; font-size: 11px; }
-
-  /* TABLE */
-  .scroll-x { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th {
-    text-align: left;
-    padding: 8px 10px;
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-    color: var(--text-muted);
-    background: var(--bg);
-    border-bottom: 1px solid var(--border);
-  }
-  td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
-  tr:last-child td { border-bottom: none; }
-  tr:hover td { background: var(--bg); }
-  /* ROWSPAN BORDERS */
-  .border-right { border-right: 1px solid var(--border); }
-
-  /* BADGES */
-  .badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 500; }
-  .badge.green { background: var(--green-light); color: var(--green); }
-  .badge.red { background: var(--red-light); color: var(--red); }
-  .badge.gray { background: var(--bg); color: var(--text-muted); border: 1px solid var(--border); }
-  .badge.amber { background: var(--amber-light); color: var(--amber); }
-
-  /* ALERT */
-  .alert { padding: 10px 14px; border-radius: var(--radius-sm); font-size: 13px; margin-bottom: 12px; }
-  .alert.info { background: var(--blue-light); color: var(--blue); }
-  .alert.success { background: var(--green-light); color: var(--green); }
-  .alert.warning { background: var(--amber-light); color: var(--amber); }
-
-  /* FORM */
-  input[type=text], input[type=number] {
-    border: 1px solid var(--border-strong);
-    border-radius: var(--radius-sm);
-    padding: 7px 10px;
-    font-size: 13px;
-    background: var(--surface);
-    color: var(--text);
-    width: 100%;
-    font-family: inherit;
-  }
-  input:focus { outline: none; border-color: var(--accent); }
-
-  .row-add { display: flex; gap: 8px; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
-
-  /* STEPS */
-  .step { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
-  .step:last-child { border-bottom: none; }
-  .step-num {
-    width: 26px; height: 26px; border-radius: 50%;
-    background: var(--bg); border: 1px solid var(--border);
-    font-size: 12px; font-weight: 600;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0; color: var(--text-muted);
-  }
-  .step-num.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-  .step b { font-size: 13px; font-weight: 600; }
-  .step span { font-size: 12px; color: var(--text-muted); }
-
-  .cost-table-wrapper { max-height: 360px; overflow-y: auto; }
-  .missing-row { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
-  .flex-between { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-  .flex-gap { display: flex; gap: 8px; }
-</style>
+<!-- External CSS -->
+<link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
-<div class="app">
+
+<!-- AUTHENTICATION UI -->
+<div id="auth-container">
+  <div class="auth-box">
+    <h2>เข้าสู่ระบบส่วนจัดการข้อมูล</h2>
+    <p>ระบบรักษาความปลอดภัยฐานข้อมูลต้นทุน Torque</p>
+    <input type="email" id="auth-email" placeholder="อีเมล (Email)">
+    <input type="password" id="auth-pass" placeholder="รหัสผ่าน (Password)" onkeyup="if(event.key==='Enter') login()">
+    <button class="btn primary" id="login-btn" onclick="login()" style="width: 100%; padding: 12px; margin-top: 8px;">เข้าสู่ระบบฐานข้อมูล</button>
+  </div>
+</div>
+
+<!-- MAIN APP UI -->
+<div id="app-container" class="app" style="display: none;">
   <div class="header">
-    <div>
+    <div class="header-text">
       <h1>คำนวณกำไร Shopee</h1>
       <p>อัพโหลดไฟล์ Order + Income → โปรแกรมคำนวณ Net กำไรให้อัตโนมัติ (รองรับหลายรายการ/ออเดอร์)</p>
     </div>
-    <span class="logo-badge">TORQUE</span>
+    <div style="display:flex; align-items:center; gap: 16px;">
+      <span class="logo-badge">TORQUE</span>
+      <div class="user-info">
+        <span id="user-email"></span> | 
+        <a href="#" onclick="logout()" style="color:var(--red); text-decoration:none; font-weight:600;">(ออกจากระบบ)</a>
+      </div>
+    </div>
   </div>
 
   <div class="tabs">
@@ -237,15 +52,14 @@
     <button class="tab" onclick="switchTab('summary')">4. สรุปรายสินค้า</button>
   </div>
 
-  <!-- TAB 1 -->
+  <!-- TAB 1 IMPORT -->
   <div id="tab-import" class="tab-content active">
-    <!-- ...existing drop areas... -->
     <div class="card">
       <h3>อัพโหลดไฟล์จาก Shopee Seller Center</h3>
       <p class="sub">โหลดไฟล์ 2 ไฟล์ทุกเดือน — ไม่ต้องแก้ไขอะไรก่อนอัพโหลด</p>
       <div class="grid2" style="margin-bottom:16px">
         <div>
-          <p style="font-size:12px;color:var(--text-muted);margin-bottom:6px;font-weight:500">ไฟล์ Order (Order_all_*.xlsx)</p>
+          <p style="font-size:12px;color:var(--text-muted);margin-bottom:8px;font-weight:600">ไฟล์ Order (Order_all_*.xlsx)</p>
           <div class="upload-area" id="drop-order" onclick="document.getElementById('file-order').click()">
             <div class="icon">📦</div>
             <p id="order-label">คลิกเพื่อเลือกไฟล์ หรือลากมาวาง</p>
@@ -253,7 +67,7 @@
           <input type="file" id="file-order" accept=".xlsx,.xls" onchange="handleFile(this,'order')">
         </div>
         <div>
-          <p style="font-size:12px;color:var(--text-muted);margin-bottom:6px;font-weight:500">ไฟล์ Income (Income_*.xlsx)</p>
+          <p style="font-size:12px;color:var(--text-muted);margin-bottom:8px;font-weight:600">ไฟล์ Income (Income_*.xlsx)</p>
           <div class="upload-area" id="drop-income" onclick="document.getElementById('file-income').click()">
             <div class="icon">💰</div>
             <p id="income-label">คลิกเพื่อเลือกไฟล์ หรือลากมาวาง</p>
@@ -270,75 +84,68 @@
 
     <div class="card">
       <h3>วิธีการทำงาน</h3>
-      <div class="step"><div class="step-num active">1</div><div><b>โหลดไฟล์</b><br><span>อัพโหลด Order และ Income จาก Seller Center</span></div></div>
-      <div class="step"><div class="step-num">2</div><div><b>จัดการต้นทุน</b><br><span>เพิ่มต้นทุนด้วย SKU หรือชื่อตัวเลือก ระบบจดจำไว้ใช้รอบถัดไป</span></div></div>
-      <div class="step"><div class="step-num">3</div><div><b>ดูผลลัพธ์</b><br><span>ระบบคำนวณกำไรต่อออเดอร์ ยอดขายเฉลี่ย และผลสรุปเชิงลึก</span></div></div>
+      <div class="step"><div class="step-num active">1</div><div><b>โหลดไฟล์</b><span>อัพโหลด Order และ Income จาก Seller Center</span></div></div>
+      <div class="step"><div class="step-num">2</div><div><b>จัดการต้นทุน</b><span>เพิ่มต้นทุนด้วย SKU หรือชื่อตัวเลือก ระบบจดจำไว้ใช้รอบถัดไป</span></div></div>
+      <div class="step"><div class="step-num">3</div><div><b>ดูผลลัพธ์</b><span>ระบบคำนวณกำไรต่อออเดอร์ ยอดขายเฉลี่ย และผลสรุปเชิงลึก</span></div></div>
     </div>
   </div>
 
-  <!-- TAB 2 -->
+  <!-- TAB 2 COST TABLE -->
   <div id="tab-cost" class="tab-content">
-    
-    <!-- FIREBASE SYNC SETUP -->
-    <div class="card" style="margin-bottom:16px; background:var(--blue-light); border:1px solid rgba(26,95,168,0.2);">
-      <div class="flex-between" style="cursor:pointer;" onclick="toggleFirebaseSetup()">
-         <h4 style="margin:0;color:var(--blue);">☁️ ตั้งค่าเชื่อมต่อฐานข้อมูลออนไลน์ (Cloud Sync สำหรับใช้งานแบบทีม)</h4>
-         <strong id="sync-status" style="font-size:12px;color:var(--blue);">● ทำงานแบบออฟไลน์ (Local) ▾</strong>
-      </div>
-    </div>
-
     <div class="card">
       <div class="flex-between">
         <div>
           <h3>ตาราง Cost ต้นทุน</h3>
-          <p class="sub">จับคู่ด้วย "SKU" หรือ "ชื่อตัวเลือก" (variant) — ข้อมูลจะถูกบันทึกจำไว้ในเครื่องอัตโนมัติ</p>
+          <p class="sub">ข้อมูลจะถูกซิงก์ดึงเก็บไว้บน Cloud ส่วนกลางอัตโนมัติ 
+            <span id="sync-status" style="font-size:12px;color:var(--text-faint); margin-left: 8px;">● ตรวจสอบการซิงก์...</span>
+          </p>
         </div>
         <div style="display:flex;gap:8px;">
           <input type="file" id="cost-import-file" accept=".xlsx,.xls" style="display:none" onchange="importCostTable(event)">
-          <button class="btn" onclick="document.getElementById('cost-import-file').click()" style="background:var(--blue-light);color:var(--blue);border-color:var(--blue)">Import Cost</button>
-          <button class="btn" onclick="resetDefaultCosts()" style="background:#f4f4f5;color:var(--text-muted)">ล้างข้อมูลทั้งหมด</button>
+          <button class="btn" onclick="document.getElementById('cost-import-file').click()" style="background:var(--blue-light);color:var(--blue);border-color:var(--blue-light)">Import Cost</button>
           <button class="btn" onclick="exportCostTable()">Export Cost Table</button>
+          <button class="btn" onclick="resetDefaultCosts()" style="color:var(--red); border-color:var(--red-light); background:var(--red-light);">ล้างข้อมูลทั้งหมด</button>
         </div>
       </div>
-      <div class="alert info">💡 ใส่ SKU จะแม่นยำที่สุด หากไม่มี SKU โปรแกรมจะดูจาก "ชื่อตัวเลือก"</div>
+      <div class="alert info">💡 ใส่ SKU จะแม่นยำที่สุด หากไม่มี SKU โปรแกรมจะดูจาก "ชื่อตัวเลือก" เป็นหลัก</div>
       <div class="cost-table-wrapper">
         <table id="cost-table">
-          <thead><tr><th style="width:20%">SKU</th><th style="width:25%">ชื่อสินค้า (บางส่วน)</th><th style="width:35%">ชื่อตัวเลือก (Variant)</th><th style="width:13%">ต้นทุน (฿)</th><th style="width:7%"></th></tr></thead>
+          <thead><tr><th style="width:20%">SKU</th><th style="width:25%">ชื่อสินค้า (บางส่วน)</th><th style="width:35%">ชื่อตัวเลือก (Variant)</th><th style="width:13%;text-align:right;">ต้นทุน (฿)</th><th style="width:7%"></th></tr></thead>
           <tbody id="cost-tbody"></tbody>
         </table>
       </div>
       <div class="row-add">
-        <input type="text" id="new-sku" placeholder="SKU" style="flex:1">
+        <input type="text" id="new-sku" placeholder="รหัส SKU" style="flex:1">
         <input type="text" id="new-product" placeholder="ชื่อสินค้า (บางส่วน)" style="flex:2">
-        <input type="text" id="new-variant" placeholder="ชื่อตัวเลือก" style="flex:2">
+        <input type="text" id="new-variant" placeholder="ชื่อตัวเลือก Variant" style="flex:2">
         <input type="number" id="new-cost" placeholder="ต้นทุน" style="flex:1;max-width:110px">
-        <button class="btn" onclick="addCostRow()">+ เพิ่ม</button>
+        <button class="btn primary" onclick="addCostRow()">+ เพิ่มข้อมูล</button>
       </div>
     </div>
 
     <div class="card">
       <h3>สินค้าที่ยังไม่มีต้นทุน</h3>
-      <p class="sub">หลังจากประมวลผล — สินค้าที่ยังขาดต้นทุนจะแสดงที่นี่ สามารถกด + ใส่ cost ได้เลย</p>
-      <div id="missing-variants"><p style="font-size:13px;color:var(--text-muted)">อัพโหลดไฟล์และกดคำนวณก่อน</p></div>
+      <p class="sub">หลังจากกดประมวลผล — สินค้าที่ยังขาดต้นทุนจะแสดงที่นี่ สามารถกด + เพื่อใส่ cost โยนขึ้นตารางด้านบนได้เลย</p>
+      <div id="missing-variants"><p style="font-size:13px;color:var(--text-muted);">ให้ทำการอัพโหลดไฟล์ในหน้าแรกและกดคำนวณก่อนครับ</p></div>
     </div>
   </div>
 
-  <!-- TAB 3 -->
+  <!-- TAB 3 RESULT -->
   <div id="tab-result" class="tab-content">
-    <div id="result-empty" class="alert info">กด "คำนวณเลย" ในแท็บแรกก่อน เพื่อดูผลลัพธ์</div>
+    <div id="result-empty" class="alert info">กด "คำนวณเลย" ในแท็บแรกก่อน เพื่อดูผลลัพธ์การคำนวณ</div>
     <div id="result-content" style="display:none">
       <div class="grid4" style="margin-bottom:16px">
         <div class="metric"><div class="label">ออเดอร์สำเร็จ</div><div class="value blue" id="r-orders">-</div></div>
-        <div class="metric"><div class="label">Income โอนแล้ว (฿)</div><div class="value" id="r-income">-</div></div>
+        <div class="metric"><div class="label">โอนเงินแล้ว (฿)</div><div class="value" id="r-income">-</div></div>
         <div class="metric"><div class="label">ต้นทุนสินค้า (฿)</div><div class="value red" id="r-cost">-</div></div>
-        <div class="metric"><div class="label">กำไรสุทธิ (฿)</div><div class="value green" id="r-net">-</div></div>
+        <div class="metric"><div class="label">กำไรสุทธิ Net (฿)</div><div class="value green" id="r-net">-</div></div>
       </div>
       <div class="card">
-        <div class="flex-between" style="margin-bottom:12px">
-          <h3>รายการออเดอร์แยกตามรายการ</h3>
+        <div class="flex-between" style="margin-bottom:16px">
+          <h3>รายการแยกตามออเดอร์</h3>
           <div class="flex-gap">
             <button class="btn sm" onclick="filterOrders('all')">ทั้งหมด</button>
-            <button class="btn sm" onclick="filterOrders('no-cost')">ขาด cost</button>
+            <button class="btn sm" onclick="filterOrders('no-cost')">ขาด Cost</button>
             <button class="btn sm" onclick="filterOrders('success')">สำเร็จ</button>
             <button class="btn primary sm" onclick="exportResult()">Export Excel</button>
           </div>
@@ -350,7 +157,7 @@
                 <th>Order ID</th>
                 <th>สินค้า / SKU</th>
                 <th>Variant / ตัวเลือก</th>
-                <th style="text-align:right">จำนวน</th>
+                <th style="text-align:center">จำนวน</th>
                 <th style="text-align:right">ยอดขาย</th>
                 <th style="text-align:right">Income โอน</th>
                 <th style="text-align:right">ต้นทุนรวม(ชิ้นนี้)</th>
@@ -361,20 +168,21 @@
             <tbody id="result-tbody"></tbody>
           </table>
         </div>
+        <div id="result-pagination" class="pagination"></div>
       </div>
     </div>
   </div>
 
   <!-- TAB 4 SUMMARY -->
   <div id="tab-summary" class="tab-content">
-    <div id="summary-empty" class="alert info">กด "คำนวณเลย" ในแท็บแรกก่อน เพื่อดูผลลัพธ์ยอดขายเฉลี่ย</div>
+    <div id="summary-empty" class="alert info">กด "คำนวณเลย" ในแท็บแรกก่อน เพื่อสรุปยอดขายแยกรายสินค้า</div>
     <div id="summary-content" style="display:none">
       <div class="card">
-        <div class="flex-between" style="margin-bottom:12px">
-          <h3>สรุปยอดขายรายสินค้า (เพื่อไว้ดูข้อมูลหลายๆแบบ)</h3>
+        <div class="flex-between" style="margin-bottom:16px">
+          <h3>สรุปยอดขายแยกรายสินค้า (สรุปวิเคราะห์)</h3>
           <button class="btn primary sm" onclick="exportSummary()">Export สรุปรายการ</button>
         </div>
-        <div class="alert info">รายงานนี้เฉลี่ยรายได้จากออเดอร์ เข้ากับจำนวนชิ้นที่ขายได้ในออเดอร์นั้นๆ เพื่อแสดงยอดขายเฉลี่ย/ชิ้น</div>
+        <div class="alert info">รายงานนี้เกลี่ยรายได้จากออเดอร์ เข้ากับจำนวนชิ้นที่ขายได้ในออเดอร์นั้นๆ เพื่อแสดงยอดขายเฉลี่ย/ชิ้นอย่างแม่นยำ</div>
         <div class="scroll-x">
           <table>
             <thead>
@@ -382,9 +190,9 @@
                 <th>SKU</th>
                 <th>ชื่อสินค้า / ตัวเลือก</th>
                 <th style="text-align:right">ขายได้(ชิ้น)</th>
-                <th style="text-align:right">รายได้รวม(ประมาณ)</th>
+                <th style="text-align:right">ยอดรับจริงรวม</th>
                 <th style="text-align:right">ต้นทุนรวม</th>
-                <th style="text-align:right">รายได้เฉลี่ย/ชิ้น</th>
+                <th style="text-align:right">รับจริงเฉลี่ย/ชิ้น</th>
                 <th style="text-align:right">กำไรเฉลี่ย/ชิ้น</th>
               </tr>
             </thead>
@@ -397,620 +205,7 @@
 
 </div>
 
-<script>
-let state = {
-  orderData: null,
-  incomeData: null,
-  costData: [],
-  results: [],
-  summary: [],
-  filterMode: 'all',
-  fileOrderLoaded: false,
-  fileIncomeLoaded: false,
-  editingId: null
-};
-
-const defaultCosts = [];
-
-// Initialize Firebase automatically with the hardcoded config
-const firebaseConfig = {
-  apiKey: "AIzaSyAmtmEQEFEQx4zf2Q1bbeTnhM3iPwPdnh4",
-  authDomain: "torque-fd288.firebaseapp.com",
-  databaseURL: "https://torque-fd288-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "torque-fd288",
-  storageBucket: "torque-fd288.firebasestorage.app",
-  messagingSenderId: "1040884189232",
-  appId: "1:1040884189232:web:4a729a7f01a89df4da45f5"
-};
-
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-}
-let dbRef = firebase.database().ref('shopee_cost_data');
-
-function importCostTable(event){
-  const file = event.target.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    try {
-      const wb = XLSX.read(e.target.result, {type:'array'});
-      const sheet = wb.Sheets[wb.SheetNames[0]];
-      const raw = XLSX.utils.sheet_to_json(sheet, {defval:''});
-      let importedCount = 0;
-      raw.forEach(r => {
-        const sku = String(r['SKU'] || r['sku'] || '').trim();
-        const product = String(r['ชื่อสินค้า'] || r['Product'] || '').trim();
-        const variant = String(r['ชื่อตัวเลือก'] || r['Variant'] || '').trim();
-        let costStr = r['ต้นทุน (฿)'] || r['ต้นทุน'] || r['Cost'] || r['cost'];
-        const cost = parseFloat(String(costStr).replace(/,/g, ''));
-        if(!isNaN(cost) && cost > 0 && (sku || product || variant)) {
-          // หากแก้ข้อมูลที่มีอยู่แล้วให้อัปเดต ถ้าไม่เจอค่อยเพิ่มใหม่
-          const existing = state.costData.find(d => (sku && d.sku === sku) || (!sku && d.variant === variant));
-          if(existing){
-             existing.cost = cost;
-             if(sku) existing.sku = sku;
-             if(product) existing.product = product;
-          } else {
-             state.costData.unshift({ id: Date.now() + importedCount, sku, product, variant, cost });
-          }
-          importedCount++;
-        }
-      });
-      saveCostsToLocal();
-      renderCostTable();
-      alert(`✅ อิมพอร์ตข้อมูลต้นทุนสำเร็จและอัปเดต จำนวน ${importedCount} รายการ!`);
-    } catch(err) {
-      alert("ไม่สามารถอ่านไฟล์ได้ กรุณาตรวจสอบฟอร์แมต Excel ให้ถูกต้อง: " + err.message);
-    }
-    event.target.value = ''; // รีเซ็ตเพื่อให้อัพโหลดไฟล์เดิมได้
-  };
-  reader.readAsArrayBuffer(file);
-}
-
-function saveCostsToLocal() {
-  // บันทึกลงเครื่องแบบ Local (เผื่อเน็ตหลุด)
-  localStorage.setItem('torque_cost_data', JSON.stringify(state.costData));
-  
-  // บันทึกลงฐานข้อมูลกลาง
-  if (dbRef) {
-     const dataToSave = (state.costData && state.costData.length > 0) ? state.costData : null;
-     dbRef.set(dataToSave).catch(function(error) {
-       console.error("Firebase error: ", error);
-       alert("ไม่สามารถบันทึกข้อมูลขึ้น Firebase ได้: อาจจะเกิดจาก Database Rules ไม่ได้เปิดให้เขียน หรือลิงก์ผิดพลาด \n\n(" + error.message + ")");
-     });
-  }
-}
-
-function toggleFirebaseSetup() {
-  // Setup is now automatic, do nothing
-}
-
-// Setup is now automatic, legacy functions kept empty
-function connectFirebase(isAuto = false) { }
-function disconnectFirebase() { }
-
-function resetDefaultCosts() {
-  if(confirm('ต้องการล้างข้อมูลต้นทุนทั้งหมดใช่ไหม?')) {
-    localStorage.removeItem('torque_cost_data');
-    state.costData = defaultCosts.map((r, i) => ({ id: i+1, ...r }));
-    saveCostsToLocal();
-    renderCostTable();
-  }
-}
-
-function initCostMap(){
-  // Setup Realtime Database listener
-  dbRef.on('value', (snapshot) => {
-      const data = snapshot.val();
-      if(data) {
-         state.costData = data;
-      } else {
-         state.costData = [];
-      }
-      renderCostTable();
-      document.getElementById('sync-status').innerText = '● ออนไลน์ซิงก์เรียบร้อยแล้ว (Cloud)';
-      document.getElementById('sync-status').style.color = 'var(--green)';
-  });
-}
-
-function renderCostTable(){
-  const tbody = document.getElementById('cost-tbody');
-  tbody.innerHTML = '';
-  state.costData.forEach(row => {
-    const tr = document.createElement('tr');
-    if (state.editingId === row.id) {
-      tr.innerHTML = `
-        <td style="padding-right:4px"><input type="text" id="edit-sku-${row.id}" value="${row.sku || ''}" style="padding:4px;font-size:12px;height:auto"></td>
-        <td style="padding-right:4px"><input type="text" id="edit-prod-${row.id}" value="${row.product || ''}" style="padding:4px;font-size:12px;height:auto"></td>
-        <td style="padding-right:4px"><input type="text" id="edit-var-${row.id}" value="${row.variant || ''}" style="padding:4px;font-size:12px;height:auto"></td>
-        <td style="padding-right:4px"><input type="number" id="edit-cost-${row.id}" value="${row.cost}" style="padding:4px;font-size:12px;height:auto"></td>
-        <td style="display:flex;gap:4px;justify-content:flex-end">
-          <button onclick="saveCost(${row.id})" style="background:var(--accent);color:white;border:none;border-radius:4px;padding:4px 8px;cursor:pointer;font-size:12px">✔</button>
-          <button onclick="cancelEdit()" style="background:#ddd;border:none;border-radius:4px;padding:4px 8px;cursor:pointer;font-size:12px">✖</button>
-        </td>
-      `;
-    } else {
-      tr.innerHTML = `
-        <td style="font-size:12px;color:var(--blue);cursor:pointer" ondblclick="editCost(${row.id})">${row.sku || '—'}</td>
-        <td style="font-size:12px;color:var(--text-muted);cursor:pointer" ondblclick="editCost(${row.id})">${row.product || '—'}</td>
-        <td style="cursor:pointer" ondblclick="editCost(${row.id})"><strong>${row.variant || '(ทุก variant)'}</strong></td>
-        <td style="text-align:right;font-weight:500;cursor:pointer" ondblclick="editCost(${row.id})">฿${row.cost.toLocaleString()}</td>
-        <td style="display:flex;gap:8px;justify-content:flex-end">
-          <button onclick="editCost(${row.id})" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:14px;line-height:1" title="แก้ไข">✎</button>
-          <button onclick="duplicateCost(${row.id})" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:14px;line-height:1" title="คัดลอก (Duplicate)">⧉</button>
-          <button onclick="deleteCost(${row.id})" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:16px;line-height:1" title="ลบ">×</button>
-        </td>
-      `;
-    }
-    tbody.appendChild(tr);
-  });
-}
-
-function editCost(id){
-  state.editingId = id;
-  renderCostTable();
-}
-
-function cancelEdit(){
-  state.editingId = null;
-  renderCostTable();
-}
-
-function saveCost(id){
-  const s = document.getElementById('edit-sku-'+id).value.trim();
-  const p = document.getElementById('edit-prod-'+id).value.trim();
-  const v = document.getElementById('edit-var-'+id).value.trim();
-  const c = parseFloat(document.getElementById('edit-cost-'+id).value);
-  if(isNaN(c)) { alert('กรุณากรอกต้นทุนให้ถูกต้อง'); return; }
-  
-  const row = state.costData.find(r => r.id === id);
-  if(row){
-    row.sku = s;
-    row.product = p;
-    row.variant = v;
-    row.cost = c;
-    saveCostsToLocal();
-  }
-  state.editingId = null;
-  renderCostTable();
-}
-
-function duplicateCost(id){
-  const row = state.costData.find(r => r.id === id);
-  if(row){
-    if(confirm(`ต้องการคัดลอกข้อมูลต้นทุน ${row.sku || row.variant || row.product} ใช่หรือไม่?`)) {
-      const newId = Date.now();
-      const newRow = { ...row, id: newId };
-      const index = state.costData.findIndex(r => r.id === id);
-      state.costData.splice(index + 1, 0, newRow);
-      state.editingId = newId;
-      saveCostsToLocal();
-      renderCostTable();
-    }
-  }
-}
-
-function addCostRow(){
-  const s = document.getElementById('new-sku').value.trim();
-  const p = document.getElementById('new-product').value.trim();
-  const v = document.getElementById('new-variant').value.trim();
-  const c = parseFloat(document.getElementById('new-cost').value);
-  if(!s && !v && !p) { alert('กรุณากรอก SKU หรือชื่อตัวเลือก หรือ ชื่อสินค้า อย่างน้อยหนึ่งอย่าง'); return; }
-  if(isNaN(c)) { alert('กรุณากรอกต้นทุนให้ถูกต้อง'); return; }
-  
-  if(!confirm(`ยืนยันการเพิ่มต้นทุนสินค้า: ${s || v || p} ในราคา ฿${c} ใช่หรือไม่?`)) return;
-  
-  state.costData.unshift({ id: Date.now(), sku: s, product: p, variant: v, cost: c });
-  saveCostsToLocal();
-  document.getElementById('new-sku').value='';
-  document.getElementById('new-product').value='';
-  document.getElementById('new-variant').value='';
-  document.getElementById('new-cost').value='';
-  renderCostTable();
-}
-
-function deleteCost(id){
-  if(confirm('ต้องการลบแบบถาวรหรือไม่?')){
-    state.costData = state.costData.filter(r => r.id !== id);
-    saveCostsToLocal();
-    renderCostTable();
-  }
-}
-
-function lookupCost(productName, variantName, sku){
-  // 1. By SKU (highest priority)
-  if(sku){
-    for(const r of state.costData){
-      if(r.sku && r.sku.toLowerCase() === sku.toLowerCase()) return r.cost;
-    }
-  }
-  // 2. Exact match variant
-  for(const r of state.costData){
-    if(r.variant && variantName && variantName.toLowerCase() === r.variant.toLowerCase()) return r.cost;
-  }
-  // 3. Includes match variant and product
-  for(const r of state.costData){
-    if(r.variant && variantName && variantName.toLowerCase().includes(r.variant.toLowerCase()) && r.variant.length > 2){
-      if(!r.product || productName.toLowerCase().includes(r.product.toLowerCase().split('/')[0].trim())){
-        return r.cost;
-      }
-    }
-  }
-  return null;
-}
-
-function switchTab(name){
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelector(`.tabs .tab[onclick*="${name}"]`).classList.add('active');
-  document.querySelectorAll('.tab-content').forEach(tc=>tc.classList.remove('active'));
-  document.getElementById('tab-'+name).classList.add('active');
-}
-
-function handleFile(input, type){
-  const file = input.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = e=>{
-    try{
-      const wb = XLSX.read(e.target.result, {type:'array'});
-      if(type==='order'){
-        const sheetName = wb.SheetNames.find(n=>n.toLowerCase().includes('order')) || wb.SheetNames[0];
-        state.orderData = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], {defval:''});
-        state.fileOrderLoaded = true;
-        document.getElementById('order-label').textContent = '✓ '+file.name;
-        document.getElementById('drop-order').classList.add('has-file');
-      } else {
-        const sheetName = wb.SheetNames.find(n=>n.toLowerCase().includes('income')) || wb.SheetNames[0];
-        const raw = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], {defval:'', header:1});
-        let headerIdx = raw.findIndex(r=>(r||[]).some(c=>String(c).includes('หมายเลขคำสั่งซื้อ')));
-        if(headerIdx<0) headerIdx = 5;
-        const headers = raw[headerIdx] || [];
-        state.incomeData = raw.slice(headerIdx+1).map(r=>{
-          const obj={};
-          headers.forEach((h,i)=>{ obj[String(h).trim()]=r[i]; });
-          return obj;
-        }).filter(r=>r['หมายเลขคำสั่งซื้อ']);
-        state.fileIncomeLoaded = true;
-        document.getElementById('income-label').textContent = '✓ '+file.name;
-        document.getElementById('drop-income').classList.add('has-file');
-      }
-      checkReady();
-    } catch(err){ alert('ไม่สามารถอ่านไฟล์ได้: '+err.message); }
-  };
-  reader.readAsArrayBuffer(file);
-}
-
-function checkReady(){
-  document.getElementById('btn-process').disabled = !(state.fileOrderLoaded && state.fileIncomeLoaded);
-}
-
-function loadSampleData(){
-  state.orderData = [
-    {'หมายเลขคำสั่งซื้อ':'26030105B','สถานะการสั่งซื้อ':'สำเร็จแล้ว','ชื่อสินค้า':'SHAD TR41','ชื่อตัวเลือก':'Polypropylene,ถาด','จำนวน': 1, 'เลข SKU อ้างอิง':'TR41-PP-T', 'ยอดชำระเงิน':3700},
-    {'หมายเลขคำสั่งซื้อ':'2603011T9','สถานะการสั่งซื้อ':'สำเร็จแล้ว','ชื่อสินค้า':'SOMAN S3','ชื่อตัวเลือก':'S3+ไมค์ก้าน','จำนวน': 2, 'เลข SKU อ้างอิง':'S3-MIC1', 'ยอดชำระเงิน':1580},
-    {'หมายเลขคำสั่งซื้อ':'2603011T9','สถานะการสั่งซื้อ':'สำเร็จแล้ว','ชื่อสินค้า':'SOMAN X7','ชื่อตัวเลือก':'Carbon','จำนวน': 1, 'เลข SKU อ้างอิง':'X7-CARB', 'ยอดชำระเงิน':4500},
-    {'หมายเลขคำสั่งซื้อ':'26030362P','สถานะการสั่งซื้อ':'ยกเลิกแล้ว','ชื่อสินค้า':'Soman M10','ชื่อตัวเลือก':'ขาวมุก','จำนวน': 1, 'เลข SKU อ้างอิง':'', 'ยอดชำระเงิน':0},
-  ];
-  state.incomeData = [
-    {'หมายเลขคำสั่งซื้อ':'26030105B','จำนวนเงินทั้งหมดที่โอนแล้ว (฿)':2562},
-    {'หมายเลขคำสั่งซื้อ':'2603011T9','จำนวนเงินทั้งหมดที่โอนแล้ว (฿)':5400},
-  ];
-  state.fileOrderLoaded = true;
-  state.fileIncomeLoaded = true;
-  document.getElementById('order-label').textContent = '✓ ข้อมูลตัวอย่าง (พร้อม SKU + จำนวนชิ้น)';
-  document.getElementById('income-label').textContent = '✓ ข้อมูลตัวอย่าง';
-  document.getElementById('drop-order').classList.add('has-file');
-  document.getElementById('drop-income').classList.add('has-file');
-  checkReady();
-  document.getElementById('import-status').innerHTML = '<div class="alert success">✓ โหลดข้อมูลตัวอย่างแล้ว กด "คำนวณเลย" ได้เลย</div>';
-}
-
-function processFiles(){
-  if(!state.orderData || !state.incomeData){ alert('กรุณาอัพโหลดไฟล์ทั้งสองก่อน'); return; }
-
-  const incomeLookup = {};
-  state.incomeData.forEach(row=>{
-    const idKey = Object.keys(row).find(k=>k.includes('คำสั่งซื้อ')) || '';
-    const amtKey = Object.keys(row).find(k=>k.includes('โอนแล้ว')) || '';
-    const orderId = String(row[idKey]||'').trim();
-    const amount = parseFloat(row[amtKey]||0)||0;
-    if(orderId) incomeLookup[orderId] = amount;
-  });
-
-  const orders = {};
-  const sample = state.orderData[0]||{};
-  const keys = Object.keys(sample);
-  const findKey = (...patterns) => keys.find(k=>patterns.some(p=>k.includes(p)))||'';
-  
-  const orderIdKey = findKey('หมายเลขคำสั่งซื้อ');
-  const statusKey = findKey('สถานะการสั่งซื้อ');
-  const productKey = findKey('ชื่อสินค้า');
-  const variantKey = findKey('ชื่อตัวเลือก');
-  const priceKey = findKey('ราคาขาย','ยอดชำระเงิน','ยอดชำระ');
-  const qtyKey = findKey('จำนวน');
-  const skuKey = findKey('SKU', 'sku', 'อ้างอิง');
-
-  state.orderData.forEach(row=>{
-    const orderId = String(row[orderIdKey]||'').trim();
-    if(!orderId) return;
-    
-    if(!orders[orderId]) {
-       orders[orderId] = {
-         orderId,
-         status: String(row[statusKey]||''),
-         items: [],
-         income: incomeLookup[orderId]||0
-       };
-    }
-    const product = String(row[productKey]||'');
-    const variant = String(row[variantKey]||'');
-    const sku = String(row[skuKey]||'');
-    const qty = parseInt(row[qtyKey]||1)||1;
-    const salePrice = parseFloat(row[priceKey]||0)||0;
-    
-    orders[orderId].items.push({ product, variant, sku, qty, salePrice });
-  });
-
-  const results = [];
-  const skuSummaryMap = {};
-  let totalIncome=0, totalCost=0, totalNet=0, successCount=0;
-  const missingVariants = new Map(); // Keep track of missing items context
-
-  Object.values(orders).forEach(o => {
-    const isCancelled = o.status.includes('ยกเลิก');
-    let orderCost = 0;
-    let missingCost = false;
-    let orderSalePrice = 0; // for prorating income to items
-
-    o.items.forEach(item => {
-      let unitCost = null;
-      if(!isCancelled){
-        unitCost = lookupCost(item.product, item.variant, item.sku);
-        if(unitCost === null){
-          missingCost = true;
-          const k = item.sku || item.variant || '(ไม่มี variant)';
-          missingVariants.set(k, { sku: item.sku, variant: item.variant, product: item.product });
-        } else {
-          orderCost += (unitCost * item.qty);
-        }
-      }
-      item.unitCost = unitCost;
-      orderSalePrice += item.salePrice;
-    });
-
-    const net = (!isCancelled && !missingCost) ? o.income - orderCost : null;
-
-    if(!isCancelled && o.income > 0){
-      successCount++;
-      totalIncome += o.income;
-      if(!missingCost){ 
-        totalCost += orderCost; 
-        totalNet += net; 
-      }
-      
-      // Calculate prorated income for averages
-      o.items.forEach(item => {
-        let key = item.sku ? item.sku : (item.variant || item.product);
-        if(!skuSummaryMap[key]) {
-          skuSummaryMap[key] = { sku: item.sku, title: item.product + (item.variant?' ('+item.variant+')':''), qty: 0, revenue: 0, cost: 0 };
-        }
-        let ratio = orderSalePrice > 0 ? (item.salePrice / orderSalePrice) : (1 / o.items.length);
-        let itemRevenue = o.income * ratio;
-        
-        skuSummaryMap[key].qty += item.qty;
-        skuSummaryMap[key].revenue += itemRevenue;
-        if(item.unitCost !== null && !isCancelled) {
-          skuSummaryMap[key].cost += (item.unitCost * item.qty);
-        }
-      });
-    }
-
-    o.items.forEach((item, idx) => {
-      results.push({
-        orderId: o.orderId,
-        status: o.status,
-        product: item.product,
-        variant: item.variant,
-        sku: item.sku,
-        qty: item.qty,
-        salePrice: item.salePrice,
-        income: o.income,
-        unitCost: item.unitCost,
-        itemCostTotal: item.unitCost !== null ? item.unitCost * item.qty : null,
-        orderCostTotal: orderCost,
-        net: net,
-        isCancelled,
-        missingCost,
-        isFirst: idx === 0,
-        rowSpan: o.items.length
-      });
-    });
-  });
-
-  state.results = results;
-  state.summary = Object.values(skuSummaryMap).sort((a,b) => b.qty - a.qty); // sort by qty desc
-
-  document.getElementById('r-orders').textContent = successCount.toLocaleString();
-  document.getElementById('r-income').textContent = Math.round(totalIncome).toLocaleString();
-  document.getElementById('r-cost').textContent = Math.round(totalCost).toLocaleString();
-  document.getElementById('r-net').textContent = Math.round(totalNet).toLocaleString();
-
-  renderResultTable();
-  renderSummaryTable();
-
-  const mv = document.getElementById('missing-variants');
-  if(missingVariants.size===0){
-    mv.innerHTML = '<div class="alert success">✓ ทุกรายการมีข้อมูลต้นทุนครบถ้วน</div>';
-  } else {
-    let mvHtml = '<div class="alert warning">⚠ พบ '+missingVariants.size+' รายการออเดอร์ที่ยังไม่มีต้นทุน</div>';
-    missingVariants.forEach((data, k) => {
-      const displayStr = data.sku ? `SKU: ${data.sku}` : `Variant: ${data.variant || data.product}`;
-      mvHtml += `<div class="missing-row flex-between">
-        <span style="font-size:12px">${displayStr}</span>
-        <button class="btn sm" onclick="prefillVariant('${data.sku||''}','${(data.variant||'').replace(/'/g,"\\'")}')">+ เพิ่ม Cost</button>
-      </div>`;
-    });
-    mv.innerHTML = mvHtml;
-  }
-
-  document.getElementById('result-empty').style.display='none';
-  document.getElementById('result-content').style.display='block';
-  document.getElementById('summary-empty').style.display='none';
-  document.getElementById('summary-content').style.display='block';
-  
-  switchTab('result');
-}
-
-function renderResultTable(){
-  const tbody = document.getElementById('result-tbody');
-  tbody.innerHTML = '';
-  
-  let data = state.results;
-  if(state.filterMode==='no-cost') data = data.filter(r => r.missingCost && !r.isCancelled);
-  if(state.filterMode==='success') data = data.filter(r => !r.isCancelled && !r.missingCost);
-
-  data.forEach(r=>{
-    const netStr = r.net!==null ? '฿'+Math.round(r.net).toLocaleString() : '—';
-    const netStyle = r.net!==null ? (r.net>=0?'color:var(--green);font-weight:600':'color:var(--red);font-weight:600') : 'color:var(--text-muted)';
-    const badge = r.isCancelled 
-      ? '<span class="badge gray">ยกเลิก</span>' 
-      : r.missingCost 
-        ? '<span class="badge red">ขาด cost</span>' 
-        : '<span class="badge green">OK</span>';
-    
-    const tr = document.createElement('tr');
-    let html = '';
-    
-    // Grouping rows in UI using rowspan for order fields when there are multiple items
-    if(r.isFirst) {
-      html += `
-        <td rowspan="${r.rowSpan}" style="font-size:11px;font-family:monospace;vertical-align:top" class="border-right">${r.orderId}</td>
-      `;
-    }
-    
-    html += `
-        <td><div style="font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.product}</div><div style="font-size:10px;color:var(--blue)">${r.sku||''}</div></td>
-        <td style="font-size:12px">${r.variant}</td>
-        <td style="text-align:center;font-weight:500">${r.qty}</td>
-        <td style="text-align:right">฿${(r.salePrice||0).toLocaleString()}</td>
-    `;
-    
-    if(r.isFirst) {
-      html += `
-        <td rowspan="${r.rowSpan}" style="text-align:right;vertical-align:top" class="border-right">฿${(r.income||0).toLocaleString()}</td>
-      `;
-    }
-    
-    html += `
-        <td style="text-align:right;color:var(--text-muted)">${r.itemCostTotal!==null?'฿'+r.itemCostTotal.toLocaleString():'—'}</td>
-    `;
-
-    if(r.isFirst){
-      html += `
-        <td rowspan="${r.rowSpan}" style="text-align:right;vertical-align:top;${netStyle}" class="border-right">${netStr}</td>
-        <td rowspan="${r.rowSpan}" style="vertical-align:top">${badge}</td>
-      `;
-    }
-
-    tr.innerHTML = html;
-    tbody.appendChild(tr);
-  });
-}
-
-function renderSummaryTable(){
-  const tbody = document.getElementById('summary-tbody');
-  tbody.innerHTML = '';
-  state.summary.forEach(r => {
-    const avgRev = r.qty > 0 ? r.revenue / r.qty : 0;
-    const avgCost = r.qty > 0 ? r.cost / r.qty : 0;
-    const avgNet = avgRev - avgCost;
-    
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td style="font-size:11px;color:var(--blue);font-family:monospace">${r.sku || '-'}</td>
-      <td style="font-size:12px">${r.title}</td>
-      <td style="text-align:right;font-weight:600">${r.qty}</td>
-      <td style="text-align:right">฿${Math.round(r.revenue).toLocaleString()}</td>
-      <td style="text-align:right">฿${Math.round(r.cost).toLocaleString()}</td>
-      <td style="text-align:right;color:var(--blue)">฿${Math.round(avgRev).toLocaleString()}</td>
-      <td style="text-align:right;font-weight:600;color:${avgNet>=0?'var(--green)':'var(--red)'}">฿${Math.round(avgNet).toLocaleString()}</td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-
-function filterOrders(type){
-  state.filterMode = type;
-  renderResultTable();
-}
-
-function prefillVariant(sku, variant){
-  document.getElementById('new-sku').value = sku;
-  document.getElementById('new-variant').value = variant;
-  switchTab('cost');
-  document.getElementById('new-cost').focus();
-}
-
-function exportResult(){
-  if(!state.results.length){ alert('ไม่มีข้อมูล'); return; }
-  const rows = state.results.map(r=>({
-    'Order ID': r.orderId,
-    'สถานะ': r.status,
-    'SKU': r.sku,
-    'สินค้า': r.product,
-    'Variant': r.variant,
-    'จำนวน': r.qty,
-    'ยอดขาย/ชิ้น': r.salePrice,
-    'Income โอน (ต่อออเดอร์)': r.isFirst ? r.income : '',
-    'ต้นทุน (รวมตามจำนวน)': r.itemCostTotal,
-    'Net กำไร (ต่อออเดอร์)': r.isFirst ? r.net : ''
-  }));
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Orders');
-  XLSX.writeFile(wb, 'Torque_Profit_Report.xlsx');
-}
-
-function exportSummary(){
-  if(!state.summary.length){ alert('ไม่มีข้อมูล'); return; }
-  const rows = state.summary.map(r=>({
-    'SKU': r.sku,
-    'สินค้า/ตัวเลือก': r.title,
-    'จำนวนที่ขายได้ (ชิ้น)': r.qty,
-    'รายได้ประมาณ (฿)': Math.round(r.revenue),
-    'ต้นทุนรวม (฿)': Math.round(r.cost),
-    'เฉลี่ยยอดขายต่อชิ้น (฿)': Math.round(r.qty>0?r.revenue/r.qty:0),
-    'เฉลี่ยกำไรต่อชิ้น (฿)': Math.round(r.qty>0?(r.revenue-r.cost)/r.qty:0)
-  }));
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Summary');
-  XLSX.writeFile(wb, 'Torque_Sales_Summary.xlsx');
-}
-
-function exportCostTable(){
-  const rows = state.costData.map(r=>({
-    'SKU': r.sku, 'สินค้า': r.product, 'Variant': r.variant, 'ต้นทุน': r.cost
-  }));
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Cost');
-  XLSX.writeFile(wb, 'Torque_CostTable.xlsx');
-}
-
-['drop-order','drop-income'].forEach(id=>{
-  const el = document.getElementById(id);
-  if(!el) return;
-  el.addEventListener('dragover', e=>{e.preventDefault(); el.style.borderColor='var(--accent)';});
-  el.addEventListener('dragleave', ()=>el.style.borderColor='');
-  el.addEventListener('drop', e=>{
-    e.preventDefault(); el.style.borderColor='';
-    const file = e.dataTransfer.files[0];
-    if(!file) return;
-    const type = id==='drop-order'?'order':'income';
-    handleFile({files:[file]}, type);
-  });
-});
-
-initCostMap();
-</script>
+<!-- External Javascript Logics -->
+<script src="assets/js/app.js"></script>
 </body>
 </html>
