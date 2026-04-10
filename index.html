@@ -108,12 +108,16 @@
         </div>
       </div>
       <div class="alert info">💡 ใส่ SKU จะแม่นยำที่สุด หากไม่มี SKU โปรแกรมจะดูจาก "ชื่อตัวเลือก" เป็นหลัก</div>
+      <div style="margin-bottom: 12px; display: flex; justify-content: flex-end;">
+        <input type="text" id="cost-search" placeholder="ค้นหาด้วยชื่อสินค้า, SKU หรือตัวเลือก..." style="padding: 8px; width: 300px; border: 1px solid #ddd; border-radius: 4px; font-family: inherit; font-size: 14px;" onkeyup="filterCostTable()">
+      </div>
       <div class="cost-table-wrapper">
         <table id="cost-table">
           <thead><tr><th style="width:20%">SKU</th><th style="width:25%">ชื่อสินค้า (บางส่วน)</th><th style="width:35%">ชื่อตัวเลือก (Variant)</th><th style="width:13%;text-align:right;">ต้นทุน (฿)</th><th style="width:7%"></th></tr></thead>
           <tbody id="cost-tbody"></tbody>
         </table>
       </div>
+      <div id="cost-pagination" class="pagination" style="margin-top: 12px; margin-bottom: 16px;"></div>
       <div class="row-add">
         <input type="text" id="new-sku" placeholder="รหัส SKU" style="flex:1">
         <input type="text" id="new-product" placeholder="ชื่อสินค้า (บางส่วน)" style="flex:2">

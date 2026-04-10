@@ -2,6 +2,9 @@ let state = {
   orderData: null,
   incomeData: null,
   costData: [],
+  costSearchQuery: '',
+  costCurrentPage: 1,
+  costItemsPerPage: 20,
   results: [],
   summary: [],
   filterMode: 'all',
@@ -155,7 +158,29 @@ function initCostMap(){
 function renderCostTable(){
   const tbody = document.getElementById('cost-tbody');
   tbody.innerHTML = '';
-  state.costData.forEach(row => {
+  
+  // Filter by search query
+  let filteredData = state.costData;
+  if(state.costSearchQuery) {
+    const q = state.costSearchQuery.toLowerCase();
+    filteredData = filteredData.filter(r => 
+      (r.sku && r.sku.toLowerCase().includes(q)) || 
+      (r.product && r.product.toLowerCase().includes(q)) ||
+      (r.variant && r.variant.toLowerCase().includes(q))
+    );
+  }
+
+  // Pagination logic
+  const totalItems = filteredData.length;
+  const totalPages = Math.ceil(totalItems / state.costItemsPerPage) || 1;
+  
+  if (state.costCurrentPage > totalPages) state.costCurrentPage = totalPages;
+  if (state.costCurrentPage < 1) state.costCurrentPage = 1;
+  
+  const startIdx = (state.costCurrentPage - 1) * state.costItemsPerPage;
+  const pageData = filteredData.slice(startIdx, startIdx + state.costItemsPerPage);
+
+  pageData.forEach(row => {
     const tr = document.createElement('tr');
     if (state.editingId === row.id) {
       tr.innerHTML = `
@@ -183,6 +208,48 @@ function renderCostTable(){
     }
     tbody.appendChild(tr);
   });
+  
+  renderCostPagination(totalPages);
+}
+
+function filterCostTable() {
+  state.costSearchQuery = document.getElementById('cost-search').value.trim();
+  state.costCurrentPage = 1;
+  renderCostTable();
+}
+
+function renderCostPagination(totalPages) {
+  const container = document.getElementById('cost-pagination');
+  if(!container) return;
+  if(totalPages <= 1) { container.innerHTML = ''; return; }
+  
+  let html = `<button class="page-btn" ${state.costCurrentPage === 1 ? 'disabled' : ''} onclick="changeCostPage(${state.costCurrentPage - 1})">❮ Prev</button>`;
+  
+  let start = Math.max(1, state.costCurrentPage - 2);
+  let end = Math.min(totalPages, start + 4);
+  if(end - start < 4) start = Math.max(1, end - 4);
+  
+  if(start > 1) {
+    html += `<button class="page-btn" onclick="changeCostPage(1)">1</button>`;
+    if(start > 2) html += `<span style="color:var(--text-muted);font-weight:600;">...</span>`;
+  }
+  
+  for(let i=start; i<=end; i++){
+    html += `<button class="page-btn ${i === state.costCurrentPage ? 'active' : ''}" onclick="changeCostPage(${i})">${i}</button>`;
+  }
+  
+  if(end < totalPages){
+    if(end < totalPages - 1) html += `<span style="color:var(--text-muted);font-weight:600;">...</span>`;
+    html += `<button class="page-btn" onclick="changeCostPage(${totalPages})">${totalPages}</button>`;
+  }
+  
+  html += `<button class="page-btn" ${state.costCurrentPage === totalPages ? 'disabled' : ''} onclick="changeCostPage(${state.costCurrentPage + 1})">Next ❯</button>`;
+  container.innerHTML = html;
+}
+
+function changeCostPage(p) {
+  state.costCurrentPage = p;
+  renderCostTable();
 }
 
 function editCost(id){
