@@ -285,13 +285,6 @@
          <h4 style="margin:0;color:var(--blue);">☁️ ตั้งค่าเชื่อมต่อฐานข้อมูลออนไลน์ (Cloud Sync สำหรับใช้งานแบบทีม)</h4>
          <strong id="sync-status" style="font-size:12px;color:var(--blue);">● ทำงานแบบออฟไลน์ (Local) ▾</strong>
       </div>
-      <div id="firebase-setup" style="display:none; margin-top:12px; font-size:13px;">
-         <p style="margin:0 0 8px 0; color:var(--text-muted);">นำข้อมูล <b>firebaseConfig</b> จากโปรเจกต์กุญแจ Firebase ของคุณมาวางที่นี่ เพื่อแชร์ฐานข้อมูลกับทีมงาน</p>
-         <textarea id="firebase-config" placeholder='{ "apiKey": "...", "authDomain": "...", "databaseURL": "...", "projectId": "..." }' style="width:100%;height:80px;margin-bottom:8px;padding:8px;font-family:monospace;font-size:12px;border-radius:4px;border:1px solid var(--border-strong)"></textarea>
-         <div style="display:flex; gap:8px;">
-           <button class="btn primary sm" onclick="connectFirebase()">บันทึก & เชื่อมต่อ</button>
-           <button class="btn sm" onclick="disconnectFirebase()">ตัดการเชื่อมต่อ (เริ่มใช้ Local ใหม่)</button>
-         </div>
       </div>
     </div>
 
@@ -420,7 +413,21 @@ let state = {
 
 const defaultCosts = [];
 
-let dbRef = null;
+// Initialize Firebase automatically with the hardcoded config
+const firebaseConfig = {
+  apiKey: "AIzaSyAmtmEQEFEQx4zf2Q1bbeTnhM3iPwPdnh4",
+  authDomain: "torque-fd288.firebaseapp.com",
+  databaseURL: "https://torque-fd288-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "torque-fd288",
+  storageBucket: "torque-fd288.firebasestorage.app",
+  messagingSenderId: "1040884189232",
+  appId: "1:1040884189232:web:4a729a7f01a89df4da45f5"
+};
+
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+let dbRef = firebase.database().ref('shopee_cost_data');
 
 function importCostTable(event){
   const file = event.target.files[0];
@@ -466,8 +473,8 @@ function saveCostsToLocal() {
   // บันทึกลงเครื่องแบบ Local (เผื่อเน็ตหลุด)
   localStorage.setItem('torque_cost_data', JSON.stringify(state.costData));
   
-  // บันทึกลงฐานข้อมูลกลาง (ถ้ามีการเชื่อมต่อ)
-  if (dbRef) {
+  // บันทึกลงฐานข้อมูลกลาง
+  if (dbRef && state.costData.length > 0) {
      dbRef.set(state.costData).catch(function(error) {
        console.error("Firebase error: ", error);
        alert("ไม่สามารถบันทึกข้อมูลขึ้น Firebase ได้: อาจจะเกิดจาก Database Rules ไม่ได้เปิดให้เขียน หรือลิงก์ผิดพลาด \n\n(" + error.message + ")");
@@ -476,52 +483,12 @@ function saveCostsToLocal() {
 }
 
 function toggleFirebaseSetup() {
-  const el = document.getElementById('firebase-setup');
-  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  // Setup is now automatic, do nothing
 }
 
-function connectFirebase(isAuto = false) {
-  const input = document.getElementById('firebase-config').value.trim();
-  if(!input) return;
-  try {
-      // แปลง key ที่ไม่มี double quote ให้เป็น JSON ที่ถูกต้อง
-      let fixedInput = input.replace(/([{,]\s*)([a-zA-Z0-9_]+)\s*:/g, '$1"$2":');
-      // ลบ trailing comma อาจะเกิด error 
-      fixedInput = fixedInput.replace(/,\s*}/g, '}');
-      const config = JSON.parse(fixedInput);
-      if (!firebase.apps.length) {
-          firebase.initializeApp(config);
-      }
-      const db = firebase.database();
-      dbRef = db.ref('shopee_cost_data');
-      
-      dbRef.on('value', (snapshot) => {
-          const data = snapshot.val();
-          if(data) {
-             state.costData = data;
-             renderCostTable();
-          } else if (!isAuto) {
-             dbRef.set(state.costData); // Initialize DB with local data if empty
-          }
-      });
-      
-      localStorage.setItem('firebase_config', JSON.stringify(config));
-      document.getElementById('sync-status').innerText = '● ออนไลน์ซิงก์เรียบร้อยแล้ว (Cloud) ▾';
-      document.getElementById('sync-status').style.color = 'var(--green)';
-      if(!isAuto) alert("✅ เชื่อมต่อฐานข้อมูลออนไลน์เรียบร้อยแล้ว");
-  } catch(e) {
-      if(!isAuto) alert("เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาเช็คความถูกต้องของโค้ด: " + e.message);
-  }
-}
-
-function disconnectFirebase() {
-  localStorage.removeItem('firebase_config');
-  if(dbRef) dbRef.off();
-  dbRef = null;
-  document.getElementById('sync-status').innerText = '● ทำงานแบบออฟไลน์ (Local) ▾';
-  document.getElementById('sync-status').style.color = 'var(--blue)';
-  document.getElementById('firebase-config').value = '';
-}
+// Setup is now automatic, legacy functions kept empty
+function connectFirebase(isAuto = false) { }
+function disconnectFirebase() { }
 
 function resetDefaultCosts() {
   if(confirm('ต้องการล้างข้อมูลต้นทุนทั้งหมดใช่ไหม?')) {
@@ -532,24 +499,18 @@ function resetDefaultCosts() {
 }
 
 function initCostMap(){
-  const savedCloudConfig = localStorage.getItem('firebase_config');
-  if(savedCloudConfig) {
-      document.getElementById('firebase-config').value = savedCloudConfig;
-      connectFirebase(true); // พยายามเชื่อมต่อแบบเงียบๆ
-  }
-  
-  const saved = localStorage.getItem('torque_cost_data');
-  if(saved){
-    try {
-      state.costData = JSON.parse(saved);
-      if(!Array.isArray(state.costData) || !state.costData.length) throw new Error("Invalid");
-    } catch(e) {
-      state.costData = defaultCosts.map((r, i) => ({ id: i+1, ...r }));
-    }
-  } else {
-    state.costData = defaultCosts.map((r, i) => ({ id: i+1, ...r }));
-  }
-  renderCostTable();
+  // Setup Realtime Database listener
+  dbRef.on('value', (snapshot) => {
+      const data = snapshot.val();
+      if(data) {
+         state.costData = data;
+      } else {
+         state.costData = [];
+      }
+      renderCostTable();
+      document.getElementById('sync-status').innerText = '● ออนไลน์ซิงก์เรียบร้อยแล้ว (Cloud)';
+      document.getElementById('sync-status').style.color = 'var(--green)';
+  });
 }
 
 function renderCostTable(){
