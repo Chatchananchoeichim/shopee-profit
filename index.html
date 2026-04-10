@@ -468,7 +468,10 @@ function saveCostsToLocal() {
   
   // บันทึกลงฐานข้อมูลกลาง (ถ้ามีการเชื่อมต่อ)
   if (dbRef) {
-     dbRef.set(state.costData);
+     dbRef.set(state.costData).catch(function(error) {
+       console.error("Firebase error: ", error);
+       alert("ไม่สามารถบันทึกข้อมูลขึ้น Firebase ได้: อาจจะเกิดจาก Database Rules ไม่ได้เปิดให้เขียน หรือลิงก์ผิดพลาด \n\n(" + error.message + ")");
+     });
   }
 }
 
@@ -481,7 +484,11 @@ function connectFirebase(isAuto = false) {
   const input = document.getElementById('firebase-config').value.trim();
   if(!input) return;
   try {
-      const config = JSON.parse(input);
+      // แปลง key ที่ไม่มี double quote ให้เป็น JSON ที่ถูกต้อง
+      let fixedInput = input.replace(/([{,]\s*)([a-zA-Z0-9_]+)\s*:/g, '$1"$2":');
+      // ลบ trailing comma อาจะเกิด error 
+      fixedInput = fixedInput.replace(/,\s*}/g, '}');
+      const config = JSON.parse(fixedInput);
       if (!firebase.apps.length) {
           firebase.initializeApp(config);
       }
