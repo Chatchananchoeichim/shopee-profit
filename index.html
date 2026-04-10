@@ -474,7 +474,8 @@ function saveCostsToLocal() {
   
   // บันทึกลงฐานข้อมูลกลาง
   if (dbRef) {
-     dbRef.set(state.costData).catch(function(error) {
+     const dataToSave = (state.costData && state.costData.length > 0) ? state.costData : null;
+     dbRef.set(dataToSave).catch(function(error) {
        console.error("Firebase error: ", error);
        alert("ไม่สามารถบันทึกข้อมูลขึ้น Firebase ได้: อาจจะเกิดจาก Database Rules ไม่ได้เปิดให้เขียน หรือลิงก์ผิดพลาด \n\n(" + error.message + ")");
      });
