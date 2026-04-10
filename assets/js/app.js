@@ -13,7 +13,12 @@ let state = {
   editingId: null,
   currentUser: null,
   currentPage: 1,
-  itemsPerPage: 100
+  itemsPerPage: 100,
+  resultSearchQuery: '',
+  summaryCurrentPage: 1,
+  summaryItemsPerPage: 100,
+  summarySearchQuery: '',
+  charts: {}
 };
 
 // Initialize Firebase automatically with the hardcoded config
@@ -180,6 +185,12 @@ function renderCostTable(){
   const startIdx = (state.costCurrentPage - 1) * state.costItemsPerPage;
   const pageData = filteredData.slice(startIdx, startIdx + state.costItemsPerPage);
 
+  if (pageData.length === 0) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td colspan="5" style="text-align:center; padding:32px; color:var(--text-muted); font-size: 14px; background:#fbfbfb;">🔍 ไม่พบข้อมูลที่คุณค้นหา</td>`;
+    tbody.appendChild(tr);
+  }
+
   pageData.forEach(row => {
     const tr = document.createElement('tr');
     if (state.editingId === row.id) {
@@ -250,6 +261,18 @@ function renderCostPagination(totalPages) {
 function changeCostPage(p) {
   state.costCurrentPage = p;
   renderCostTable();
+}
+
+function changeCostPerPage(val) {
+  state.costItemsPerPage = parseInt(val, 10);
+  state.costCurrentPage = 1;
+  renderCostTable();
+}
+
+function changeResultPerPage(val) {
+  state.itemsPerPage = parseInt(val, 10);
+  state.currentPage = 1;
+  renderResultTable();
 }
 
 function editCost(id){
@@ -389,14 +412,15 @@ function checkReady(){
 
 function loadSampleData(){
   state.orderData = [
-    {'หมายเลขคำสั่งซื้อ':'26030105B','สถานะการสั่งซื้อ':'สำเร็จแล้ว','ชื่อสินค้า':'SHAD TR41','ชื่อตัวเลือก':'Polypropylene,ถาด','จำนวน': 1, 'เลข SKU อ้างอิง':'TR41-PP-T', 'ยอดชำระเงิน':3700},
-    {'หมายเลขคำสั่งซื้อ':'2603011T9','สถานะการสั่งซื้อ':'สำเร็จแล้ว','ชื่อสินค้า':'SOMAN S3','ชื่อตัวเลือก':'S3+ไมค์ก้าน','จำนวน': 2, 'เลข SKU อ้างอิง':'S3-MIC1', 'ยอดชำระเงิน':1580},
-    {'หมายเลขคำสั่งซื้อ':'2603011T9','สถานะการสั่งซื้อ':'สำเร็จแล้ว','ชื่อสินค้า':'SOMAN X7','ชื่อตัวเลือก':'Carbon','จำนวน': 1, 'เลข SKU อ้างอิง':'X7-CARB', 'ยอดชำระเงิน':4500},
-    {'หมายเลขคำสั่งซื้อ':'26030362P','สถานะการสั่งซื้อ':'ยกเลิกแล้ว','ชื่อสินค้า':'Soman M10','ชื่อตัวเลือก':'ขาวมุก','จำนวน': 1, 'เลข SKU อ้างอิง':'', 'ยอดชำระเงิน':0},
+    {'หมายเลขคำสั่งซื้อ':'26030105B', 'เวลาที่สั่งซื้อ': '2024-03-26 10:00', 'สถานะการสั่งซื้อ':'สำเร็จแล้ว','ชื่อสินค้า':'SHAD TR41','ชื่อตัวเลือก':'Polypropylene,ถาด','จำนวน': 1, 'เลข SKU อ้างอิง':'TR41-PP-T', 'ยอดชำระเงิน':3700},
+    {'หมายเลขคำสั่งซื้อ':'2603011T9', 'เวลาที่สั่งซื้อ': '2024-03-26 14:00', 'สถานะการสั่งซื้อ':'สำเร็จแล้ว','ชื่อสินค้า':'SOMAN S3','ชื่อตัวเลือก':'S3+ไมค์ก้าน','จำนวน': 2, 'เลข SKU อ้างอิง':'S3-MIC1', 'ยอดชำระเงิน':1580},
+    {'หมายเลขคำสั่งซื้อ':'2603011T10', 'เวลาที่สั่งซื้อ': '2024-03-27 15:30', 'สถานะการสั่งซื้อ':'สำเร็จแล้ว','ชื่อสินค้า':'SOMAN X7','ชื่อตัวเลือก':'Carbon','จำนวน': 1, 'เลข SKU อ้างอิง':'X7-CARB', 'ยอดชำระเงิน':4500},
+    {'หมายเลขคำสั่งซื้อ':'26030362P', 'เวลาที่สั่งซื้อ': '2024-03-27 09:00', 'สถานะการสั่งซื้อ':'ยกเลิกแล้ว','ชื่อสินค้า':'Soman M10','ชื่อตัวเลือก':'ขาวมุก','จำนวน': 1, 'เลข SKU อ้างอิง':'', 'ยอดชำระเงิน':0},
   ];
   state.incomeData = [
     {'หมายเลขคำสั่งซื้อ':'26030105B','จำนวนเงินทั้งหมดที่โอนแล้ว (฿)':2562},
-    {'หมายเลขคำสั่งซื้อ':'2603011T9','จำนวนเงินทั้งหมดที่โอนแล้ว (฿)':5400},
+    {'หมายเลขคำสั่งซื้อ':'2603011T9','จำนวนเงินทั้งหมดที่โอนแล้ว (฿)':1540},
+    {'หมายเลขคำสั่งซื้อ':'2603011T10','จำนวนเงินทั้งหมดที่โอนแล้ว (฿)':4100},
   ];
   state.fileOrderLoaded = true;
   state.fileIncomeLoaded = true;
@@ -406,6 +430,19 @@ function loadSampleData(){
   document.getElementById('drop-income').classList.add('has-file');
   checkReady();
   document.getElementById('import-status').innerHTML = '<div class="alert success">✓ โหลดข้อมูลตัวอย่างแล้ว กด "คำนวณเลย" ได้เลย</div>';
+}
+
+function processFilesWithLoader() {
+  const btn = document.getElementById('btn-process');
+  const orgText = btn.innerText;
+  btn.innerText = "กำลังวิเคราะห์ข้อมูล...";
+  btn.disabled = true;
+  
+  setTimeout(() => {
+    processFiles();
+    btn.innerText = orgText;
+    btn.disabled = false;
+  }, 150);
 }
 
 function processFiles(){
@@ -432,6 +469,7 @@ function processFiles(){
   const priceKey = findKey('ราคาขาย','ยอดชำระเงิน','ยอดชำระ');
   const qtyKey = findKey('จำนวน');
   const skuKey = findKey('SKU', 'sku', 'อ้างอิง');
+  const dateKey = findKey('เวลาที่สั่งซื้อ', 'วันที่สั่งซื้อ', 'เวลาชำระเงิน', 'วันเวลา');
 
   state.orderData.forEach(row=>{
     const orderId = String(row[orderIdKey]||'').trim();
@@ -440,6 +478,7 @@ function processFiles(){
     if(!orders[orderId]) {
        orders[orderId] = {
          orderId,
+         date: String(row[dateKey]||''),
          status: String(row[statusKey]||''),
          items: [],
          income: incomeLookup[orderId]||0
@@ -456,6 +495,7 @@ function processFiles(){
 
   const results = [];
   const skuSummaryMap = {};
+  const timeSeriesMap = {};
   let totalIncome=0, totalCost=0, totalNet=0, successCount=0;
   const missingVariants = new Map();
 
@@ -483,12 +523,23 @@ function processFiles(){
 
     const net = (!isCancelled && !missingCost) ? o.income - orderCost : null;
 
+    let shortDate = 'ไม่ระบุ';
+    if(o.date) {
+        const d = o.date.split(' ')[0];
+        if(d.length > 5) shortDate = d;
+    }
+
     if(!isCancelled && o.income > 0){
       successCount++;
       totalIncome += o.income;
+      
+      if(!timeSeriesMap[shortDate]) timeSeriesMap[shortDate] = { revenue: 0, profit: 0 };
+      timeSeriesMap[shortDate].revenue += o.income;
+      
       if(!missingCost){ 
         totalCost += orderCost; 
         totalNet += net; 
+        timeSeriesMap[shortDate].profit += net;
       }
       
       o.items.forEach(item => {
@@ -531,6 +582,11 @@ function processFiles(){
 
   state.results = results;
   state.summary = Object.values(skuSummaryMap).sort((a,b) => b.qty - a.qty);
+  
+  state.timeSeries = Object.keys(timeSeriesMap).map(k => ({
+     date: k, revenue: timeSeriesMap[k].revenue, profit: timeSeriesMap[k].profit
+  })).sort((a,b) => a.date.localeCompare(b.date));
+
   state.currentPage = 1;
 
   document.getElementById('r-orders').textContent = successCount.toLocaleString();
@@ -560,8 +616,189 @@ function processFiles(){
   document.getElementById('result-content').style.display='block';
   document.getElementById('summary-empty').style.display='none';
   document.getElementById('summary-content').style.display='block';
+  document.getElementById('dashboard-empty').style.display='none';
+  document.getElementById('dashboard-content').style.display='block';
   
+  renderDashboard();
   switchTab('result');
+}
+
+function renderDashboard() {
+  if(state.charts.marginTier) state.charts.marginTier.destroy();
+  if(state.charts.timeSeries) state.charts.timeSeries.destroy();
+  if(state.charts.bcg) state.charts.bcg.destroy();
+  if(state.charts.topProfit) state.charts.topProfit.destroy();
+  if(state.charts.salesQty) state.charts.salesQty.destroy();
+
+  let totalRevenue = state.summary.reduce((a,b)=>a+b.revenue, 0);
+  let totalCost = state.summary.reduce((a,b)=>a+b.cost, 0);
+  let totalNet = totalRevenue - totalCost;
+  let overallMargin = totalRevenue > 0 ? (totalNet / totalRevenue) * 100 : 0;
+
+  // Margin Tiers & BCG Data
+  let tierA = 0, tierB = 0, tierC = 0, lossCount = 0;
+  let skuProfitCount = 0;
+  let starCount = 0;
+  let sumRev = 0, sumProfit = 0;
+  const bcgData = [];
+
+  state.summary.forEach(s => {
+    const profit = s.revenue - s.cost;
+    const marginPct = s.revenue > 0 ? (profit / s.revenue) * 100 : 0;
+    
+    if(marginPct >= 30) tierA++;
+    else if(marginPct >= 15) tierB++;
+    else if(profit > 0) tierC++;
+    
+    if(profit > 0) skuProfitCount++;
+    if(profit < 0) lossCount++;
+    
+    if(s.qty > 0) {
+      sumRev += s.revenue;
+      sumProfit += profit;
+      bcgData.push({
+        x: s.revenue, y: profit, r: Math.max(8, Math.min(s.qty * 1.5, 30)),
+        label: s.sku || s.title.substring(0, 15)
+      });
+    }
+  });
+
+  const avgRev =  bcgData.length ? sumRev / bcgData.length : 0;
+  const avgProfit = bcgData.length ? sumProfit / bcgData.length : 0;
+
+  bcgData.forEach(item => { if(item.x >= avgRev && item.y >= avgProfit) starCount++; });
+
+  document.getElementById('d-margin').innerText = overallMargin.toFixed(1) + '%';
+  document.getElementById('d-star-count').innerText = starCount + ' SKUs';
+  document.getElementById('d-profit-skus').innerText = skuProfitCount + ' SKUs';
+  document.getElementById('d-loss-skus').innerText = lossCount + ' SKUs';
+
+  // 1. Margin Tier Chart
+  const ctxTier = document.getElementById('marginTierChart').getContext('2d');
+  state.charts.marginTier = new Chart(ctxTier, {
+    type: 'doughnut',
+    data: {
+      labels: ['Tier A (>30%)', 'Tier B (15-30%)', 'Tier C (<15%)', 'ขาดทุน'],
+      datasets: [{
+        data: [tierA, tierB, tierC, lossCount],
+        backgroundColor: ['#2b8a3e', '#74b816', '#fab005', '#e03131'],
+        borderWidth: 2, borderColor: '#fff'
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'right' } }
+    }
+  });
+
+  // 2. Seasonality Chart (Time Series)
+  const ctxTime = document.getElementById('timeSeriesChart').getContext('2d');
+  state.charts.timeSeries = new Chart(ctxTime, {
+    type: 'line',
+    data: {
+      labels: (state.timeSeries || []).map(d => d.date),
+      datasets: [
+        {
+          type: 'bar', label: 'ยอดขาย (Revenue)',
+          data: (state.timeSeries || []).map(d => d.revenue),
+          backgroundColor: '#a5d8ff', borderRadius: 4
+        },
+        {
+          type: 'line', label: 'กำไร (Profit)',
+          data: (state.timeSeries || []).map(d => d.profit),
+          borderColor: '#2b8a3e', backgroundColor: '#2b8a3e',
+          borderWidth: 3, tension: 0.3
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: { y: { beginAtZero: true } },
+      plugins: { legend: { position: 'top' } }
+    }
+  });
+
+  // 3. BCG Matrix
+  const scatterColors = bcgData.map(d => {
+    if(d.x >= avgRev && d.y >= avgProfit) return 'rgba(250, 176, 5, 0.8)'; // Star
+    if(d.x >= avgRev && d.y < avgProfit) return 'rgba(28, 126, 214, 0.8)'; // Cash Cow
+    if(d.x < avgRev && d.y >= avgProfit) return 'rgba(190, 75, 219, 0.8)'; // Question Mark
+    return 'rgba(134, 142, 150, 0.7)'; // Dog
+  });
+
+  const ctxBCG = document.getElementById('bcgMatrixChart').getContext('2d');
+  state.charts.bcg = new Chart(ctxBCG, {
+    type: 'bubble',
+    data: {
+      datasets: [{
+        label: 'สินค้า', data: bcgData,
+        backgroundColor: scatterColors,
+        borderColor: '#fff', borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: function(ctx) {
+              const d = ctx.raw;
+              return `${d.label} | ขาย: ฿${Math.round(d.x).toLocaleString()} | กำไร: ฿${Math.round(d.y).toLocaleString()}`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: { title: { display: true, text: 'ยอดขายสุทธิ' }, grid: { color: (ctx) => ctx.tick.value === 0 ? '#333' : '#eee' } },
+        y: { title: { display: true, text: 'กำไร (Profit)' }, grid: { color: (ctx) => ctx.tick.value === 0 ? '#333' : '#eee' } }
+      }
+    }
+  });
+
+  // 4. Top Profit
+  const sortedByProfit = [...state.summary].sort((a,b) => (b.revenue-b.cost) - (a.revenue-a.cost)).slice(0, 5);
+  const ctxTopProfit = document.getElementById('topProfitChart').getContext('2d');
+  state.charts.topProfit = new Chart(ctxTopProfit, {
+    type: 'bar',
+    data: {
+      labels: sortedByProfit.map(r => r.sku || r.title.substring(0,18)+'..'),
+      datasets: [{
+        data: sortedByProfit.map(r => r.revenue - r.cost),
+        backgroundColor: '#2b8a3e', borderRadius: 4
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+
+  // 5. Top Qty
+  const sortedByQty = [...state.summary].sort((a,b) => b.qty - a.qty).slice(0, 10);
+  const ctxSalesQty = document.getElementById('salesQtyChart').getContext('2d');
+  state.charts.salesQty = new Chart(ctxSalesQty, {
+    type: 'bar',
+    data: {
+      labels: sortedByQty.map(r => r.sku || r.title.substring(0,18)+'..'),
+      datasets: [{
+        data: sortedByQty.map(r => r.qty),
+        backgroundColor: '#1c7ed6', borderRadius: 4
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+}
+
+function filterResultTable(){
+  state.resultSearchQuery = document.getElementById('result-search').value.trim();
+  state.currentPage = 1;
+  renderResultTable();
 }
 
 function renderResultTable(){
@@ -571,6 +808,15 @@ function renderResultTable(){
   let data = state.results;
   if(state.filterMode==='no-cost') data = data.filter(r => r.missingCost && !r.isCancelled);
   if(state.filterMode==='success') data = data.filter(r => !r.isCancelled && !r.missingCost);
+
+  if(state.resultSearchQuery) {
+    const q = state.resultSearchQuery.toLowerCase();
+    data = data.filter(r => 
+      (r.orderId && r.orderId.toLowerCase().includes(q)) ||
+      (r.product && r.product.toLowerCase().includes(q)) ||
+      (r.sku && r.sku.toLowerCase().includes(q))
+    );
+  }
 
   // Pagination logic based on unique orders
   const uniqueOrders = [...new Set(data.map(r => r.orderId))];
@@ -584,6 +830,12 @@ function renderResultTable(){
   const pageOrders = new Set(uniqueOrders.slice(startIdx, startIdx + state.itemsPerPage));
   
   const pageData = data.filter(r => pageOrders.has(r.orderId));
+
+  if (pageData.length === 0) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td colspan="9" style="text-align:center; padding:32px; color:var(--text-muted); font-size: 14px; background:#fbfbfb;">🔍 ไม่พบข้อมูลที่ค้นหา</td>`;
+    tbody.appendChild(tr);
+  }
 
   pageData.forEach(r=>{
     const netStr = r.net!==null ? '฿'+Math.round(r.net).toLocaleString() : '—';
@@ -662,10 +914,41 @@ function changePage(p) {
   renderResultTable();
 }
 
+function filterSummaryTable(){
+  state.summarySearchQuery = document.getElementById('summary-search').value.trim();
+  state.summaryCurrentPage = 1;
+  renderSummaryTable();
+}
+
 function renderSummaryTable(){
   const tbody = document.getElementById('summary-tbody');
   tbody.innerHTML = '';
-  state.summary.forEach(r => {
+  
+  let data = state.summary;
+  if(state.summarySearchQuery) {
+    const q = state.summarySearchQuery.toLowerCase();
+    data = data.filter(r => 
+      (r.sku && r.sku.toLowerCase().includes(q)) ||
+      (r.title && r.title.toLowerCase().includes(q))
+    );
+  }
+
+  const totalItems = data.length;
+  const totalPages = Math.ceil(totalItems / state.summaryItemsPerPage) || 1;
+  
+  if (state.summaryCurrentPage > totalPages) state.summaryCurrentPage = totalPages;
+  if (state.summaryCurrentPage < 1) state.summaryCurrentPage = 1;
+
+  const startIdx = (state.summaryCurrentPage - 1) * state.summaryItemsPerPage;
+  const pageData = data.slice(startIdx, startIdx + state.summaryItemsPerPage);
+
+  if (pageData.length === 0) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td colspan="8" style="text-align:center; padding:32px; color:var(--text-muted); font-size: 14px; background:#fbfbfb;">🔍 ไม่พบข้อมูลที่ค้นหา</td>`;
+    tbody.appendChild(tr);
+  }
+
+  pageData.forEach(r => {
     const avgRev = r.qty > 0 ? r.revenue / r.qty : 0;
     const avgCost = r.qty > 0 ? r.cost / r.qty : 0;
     const avgNet = avgRev - avgCost;
@@ -677,11 +960,54 @@ function renderSummaryTable(){
       <td style="text-align:right;font-weight:600">${r.qty}</td>
       <td style="text-align:right">฿${Math.round(r.revenue).toLocaleString()}</td>
       <td style="text-align:right">฿${Math.round(r.cost).toLocaleString()}</td>
+      <td style="text-align:right;color:var(--text-muted)">฿${Math.round(avgCost).toLocaleString()}</td>
       <td style="text-align:right;color:var(--blue);font-weight:500">฿${Math.round(avgRev).toLocaleString()}</td>
       <td style="text-align:right;font-weight:600;color:${avgNet>=0?'var(--green)':'var(--red)'}">฿${Math.round(avgNet).toLocaleString()}</td>
     `;
     tbody.appendChild(tr);
   });
+  
+  renderSummaryPagination(totalPages);
+}
+
+function renderSummaryPagination(totalPages) {
+  const container = document.getElementById('summary-pagination');
+  if(!container) return;
+  if(totalPages <= 1) { container.innerHTML = ''; return; }
+  
+  let html = `<button class="page-btn" ${state.summaryCurrentPage === 1 ? 'disabled' : ''} onclick="changeSummaryPage(${state.summaryCurrentPage - 1})">❮ Prev</button>`;
+  
+  let start = Math.max(1, state.summaryCurrentPage - 2);
+  let end = Math.min(totalPages, start + 4);
+  if(end - start < 4) start = Math.max(1, end - 4);
+  
+  if(start > 1) {
+    html += `<button class="page-btn" onclick="changeSummaryPage(1)">1</button>`;
+    if(start > 2) html += `<span style="color:var(--text-muted);font-weight:600;">...</span>`;
+  }
+  
+  for(let i=start; i<=end; i++){
+    html += `<button class="page-btn ${i === state.summaryCurrentPage ? 'active' : ''}" onclick="changeSummaryPage(${i})">${i}</button>`;
+  }
+  
+  if(end < totalPages){
+    if(end < totalPages - 1) html += `<span style="color:var(--text-muted);font-weight:600;">...</span>`;
+    html += `<button class="page-btn" onclick="changeSummaryPage(${totalPages})">${totalPages}</button>`;
+  }
+  
+  html += `<button class="page-btn" ${state.summaryCurrentPage === totalPages ? 'disabled' : ''} onclick="changeSummaryPage(${state.summaryCurrentPage + 1})">Next ❯</button>`;
+  container.innerHTML = html;
+}
+
+function changeSummaryPage(p) {
+  state.summaryCurrentPage = p;
+  renderSummaryTable();
+}
+
+function changeSummaryPerPage(val) {
+  state.summaryItemsPerPage = parseInt(val, 10);
+  state.summaryCurrentPage = 1;
+  renderSummaryTable();
 }
 
 function filterOrders(type){
@@ -695,6 +1021,11 @@ function prefillVariant(sku, variant){
   document.getElementById('new-variant').value = variant;
   switchTab('cost');
   document.getElementById('new-cost').focus();
+}
+
+function getFormattedDateStr() {
+  const d = new Date();
+  return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
 }
 
 function exportResult(){
@@ -713,7 +1044,7 @@ function exportResult(){
   }));
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Orders');
-  XLSX.writeFile(wb, 'Torque_Profit_Report.xlsx');
+  XLSX.writeFile(wb, `Torque_Profit_Report_${getFormattedDateStr()}.xlsx`);
 }
 
 function exportSummary(){
@@ -724,12 +1055,13 @@ function exportSummary(){
     'จำนวนที่ขายได้ (ชิ้น)': r.qty,
     'รายได้ประมาณ (฿)': Math.round(r.revenue),
     'ต้นทุนรวม (฿)': Math.round(r.cost),
+    'เฉลี่ยต้นทุนต่อชิ้น (฿)': Math.round(r.qty>0?r.cost/r.qty:0),
     'เฉลี่ยยอดขายต่อชิ้น (฿)': Math.round(r.qty>0?r.revenue/r.qty:0),
     'เฉลี่ยกำไรต่อชิ้น (฿)': Math.round(r.qty>0?(r.revenue-r.cost)/r.qty:0)
   }));
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Summary');
-  XLSX.writeFile(wb, 'Torque_Sales_Summary.xlsx');
+  XLSX.writeFile(wb, `Torque_Sales_Summary_${getFormattedDateStr()}.xlsx`);
 }
 
 function exportCostTable(){
@@ -738,7 +1070,7 @@ function exportCostTable(){
   }));
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Cost');
-  XLSX.writeFile(wb, 'Torque_CostTable.xlsx');
+  XLSX.writeFile(wb, `Torque_CostTable_${getFormattedDateStr()}.xlsx`);
 }
 
 ['drop-order','drop-income'].forEach(id=>{

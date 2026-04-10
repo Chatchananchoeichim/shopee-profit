@@ -13,6 +13,9 @@
 <!-- Excel Library -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
+<!-- Chart.js for Dashboard -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <!-- External CSS -->
 <link rel="stylesheet" href="assets/css/style.css">
 </head>
@@ -50,6 +53,7 @@
     <button class="tab" onclick="switchTab('cost')">2. ตาราง Cost</button>
     <button class="tab" onclick="switchTab('result')">3. ผลลัพธ์</button>
     <button class="tab" onclick="switchTab('summary')">4. สรุปรายสินค้า</button>
+    <button class="tab" onclick="switchTab('dashboard')">5. Dashboard Analytics</button>
   </div>
 
   <!-- TAB 1 IMPORT -->
@@ -77,7 +81,7 @@
       </div>
       <div id="import-status"></div>
       <div class="flex-gap">
-        <button class="btn primary" onclick="processFiles()" id="btn-process" disabled>คำนวณเลย →</button>
+        <button class="btn primary" onclick="processFilesWithLoader()" id="btn-process" disabled>คำนวณเลย →</button>
         <button class="btn" onclick="loadSampleData()">ใช้ข้อมูลตัวอย่าง</button>
       </div>
     </div>
@@ -108,8 +112,21 @@
         </div>
       </div>
       <div class="alert info">💡 ใส่ SKU จะแม่นยำที่สุด หากไม่มี SKU โปรแกรมจะดูจาก "ชื่อตัวเลือก" เป็นหลัก</div>
-      <div style="margin-bottom: 12px; display: flex; justify-content: flex-end;">
-        <input type="text" id="cost-search" placeholder="ค้นหาด้วยชื่อสินค้า, SKU หรือตัวเลือก..." style="padding: 8px; width: 300px; border: 1px solid #ddd; border-radius: 4px; font-family: inherit; font-size: 14px;" onkeyup="filterCostTable()">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 12px; align-items: center;">
+        <div style="font-size: 14px; font-weight: 500; color: var(--text-muted);">
+          แสดง 
+          <select id="cost-per-page" onchange="changeCostPerPage(this.value)" style="padding: 6px; border-radius: 4px; border: 1px solid #ddd; font-family: inherit;">
+            <option value="10">10</option>
+            <option value="20" selected>20</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select> 
+          รายการ/หน้า
+        </div>
+        <div style="position:relative;">
+          <input type="text" id="cost-search" placeholder="ค้นหาด้วยชื่อสินค้า, SKU หรือตัวเลือก..." style="padding: 8px; width: 300px; border: 1px solid #ddd; border-radius: 4px; font-family: inherit; font-size: 14px; padding-right:32px;" onkeyup="filterCostTable()">
+          <button onclick="document.getElementById('cost-search').value=''; filterCostTable();" style="position:absolute; right:8px; top:10px; background:none; border:none; cursor:pointer; color:#999; font-size:12px;">✖</button>
+        </div>
       </div>
       <div class="cost-table-wrapper">
         <table id="cost-table">
@@ -146,14 +163,33 @@
       </div>
       <div class="card">
         <div class="flex-between" style="margin-bottom:16px">
-          <h3>รายการแยกตามออเดอร์</h3>
-          <div class="flex-gap">
-            <button class="btn sm" onclick="filterOrders('all')">ทั้งหมด</button>
-            <button class="btn sm" onclick="filterOrders('no-cost')">ขาด Cost</button>
-            <button class="btn sm" onclick="filterOrders('success')">สำเร็จ</button>
-            <button class="btn primary sm" onclick="exportResult()">Export Excel</button>
+          <div>
+            <h3 style="margin-bottom:8px;">รายการแยกตามออเดอร์</h3>
+            <div class="flex-gap">
+              <button class="btn sm" onclick="filterOrders('all')">ทั้งหมด</button>
+              <button class="btn sm" onclick="filterOrders('no-cost')">ขาด Cost</button>
+              <button class="btn sm" onclick="filterOrders('success')">สำเร็จ</button>
+            </div>
           </div>
+          <button class="btn primary sm" onclick="exportResult()">Export Excel</button>
         </div>
+        
+        <div style="display: flex; justify-content: space-between; margin-bottom: 12px; align-items: center;">
+          <div style="font-size: 14px; font-weight: 500; color: var(--text-muted);">
+            แสดง 
+            <select id="result-per-page" onchange="changeResultPerPage(this.value)" style="padding: 6px; border-radius: 4px; border: 1px solid #ddd; font-family: inherit;">
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+              <option value="100" selected>100</option>
+            </select> 
+            รายการ/หน้า
+          </div>
+        <div style="position:relative;">
+          <input type="text" id="result-search" placeholder="ค้นหา Order ID หรือชื่อสินค้า..." style="padding: 8px; width: 300px; border: 1px solid #ddd; border-radius: 4px; font-family: inherit; font-size: 14px; padding-right:32px;" onkeyup="filterResultTable()">
+          <button onclick="document.getElementById('result-search').value=''; filterResultTable();" style="position:absolute; right:8px; top:10px; background:none; border:none; cursor:pointer; color:#999; font-size:12px;">✖</button>
+        </div>
+      </div>
         <div class="scroll-x">
           <table>
             <thead>
@@ -187,6 +223,24 @@
           <button class="btn primary sm" onclick="exportSummary()">Export สรุปรายการ</button>
         </div>
         <div class="alert info">รายงานนี้เกลี่ยรายได้จากออเดอร์ เข้ากับจำนวนชิ้นที่ขายได้ในออเดอร์นั้นๆ เพื่อแสดงยอดขายเฉลี่ย/ชิ้นอย่างแม่นยำ</div>
+        
+        <div style="display: flex; justify-content: space-between; margin-bottom: 12px; align-items: center;">
+          <div style="font-size: 14px; font-weight: 500; color: var(--text-muted);">
+            แสดง 
+            <select id="summary-per-page" onchange="changeSummaryPerPage(this.value)" style="padding: 6px; border-radius: 4px; border: 1px solid #ddd; font-family: inherit;">
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+              <option value="100" selected>100</option>
+            </select> 
+            รายการ/หน้า
+          </div>
+        <div style="position:relative;">
+          <input type="text" id="summary-search" placeholder="ค้นหาด้วยชื่อสินค้า หรือ SKU..." style="padding: 8px; width: 300px; border: 1px solid #ddd; border-radius: 4px; font-family: inherit; font-size: 14px; padding-right:32px;" onkeyup="filterSummaryTable()">
+          <button onclick="document.getElementById('summary-search').value=''; filterSummaryTable();" style="position:absolute; right:8px; top:10px; background:none; border:none; cursor:pointer; color:#999; font-size:12px;">✖</button>
+        </div>
+      </div>
+        
         <div class="scroll-x">
           <table>
             <thead>
@@ -196,6 +250,7 @@
                 <th style="text-align:right">ขายได้(ชิ้น)</th>
                 <th style="text-align:right">ยอดรับจริงรวม</th>
                 <th style="text-align:right">ต้นทุนรวม</th>
+                <th style="text-align:right">ต้นทุนเฉลี่ย/ชิ้น</th>
                 <th style="text-align:right">รับจริงเฉลี่ย/ชิ้น</th>
                 <th style="text-align:right">กำไรเฉลี่ย/ชิ้น</th>
               </tr>
@@ -203,7 +258,68 @@
             <tbody id="summary-tbody"></tbody>
           </table>
         </div>
+        <div id="summary-pagination" class="pagination" style="margin-top: 16px;"></div>
       </div>
+    </div>
+  </div>
+
+  <!-- TAB 5 DASHBOARD -->
+  <div id="tab-dashboard" class="tab-content">
+    <div class="flex-between" style="margin-bottom: 16px;">
+      <div>
+        <h2 style="margin: 0; padding-bottom: 4px;">Marketing Insights Dashboard</h2>
+        <p class="sub" style="margin: 0;">วิเคราะห์ข้อมูลเชิงลึก 4 แกนหลัก ภายใต้แนวคิด Data-driven Marketing</p>
+      </div>
+      <button class="btn primary outline" onclick="renderDashboard()">รีเฟรชข้อมูล ↻</button>
+    </div>
+    
+    <div id="dashboard-empty" class="alert info">กด "คำนวณเลย" ในแท็บแรกก่อน เพื่อวิเคราะห์ข้อมูลเชิงลึก</div>
+    <div id="dashboard-content" style="display:none">
+
+      <!-- KPI Box -->
+      <div class="grid4" style="margin-bottom:16px">
+        <div class="metric"><div class="label">Margin รวมภาพรวม (%)</div><div class="value green" id="d-margin">-</div></div>
+        <div class="metric" title="สินค้าขายดี+กำไรสูง ตาม BCG Matrix"><div class="label">สินค้ากลุ่ม Star 🌟</div><div class="value" id="d-star-count">-</div></div>
+        <div class="metric"><div class="label">สินค้าทำกำไร (SKUs)</div><div class="value blue" id="d-profit-skus">-</div></div>
+        <div class="metric"><div class="label">สินค้าขาดทุน (SKUs)</div><div class="value red" id="d-loss-skus">-</div></div>
+      </div>
+
+      <!-- ROW 1: Margin Tier (Item 2) & Seasonality (Item 3) -->
+      <div class="grid2" style="margin-bottom:16px;">
+        <div class="card" style="position: relative; height: 380px;">
+          <h3 style="margin-bottom: 4px;">2. Pricing Intelligence</h3>
+          <p class="sub" style="margin-bottom: 16px; font-size:12px;">โครงสร้างกำไร: A (>30%), B (15-30%), C (<15%)</p>
+          <div style="height:270px"><canvas id="marginTierChart"></canvas></div>
+        </div>
+        <div class="card" style="position: relative; height: 380px;">
+          <h3 style="margin-bottom: 4px;">3. Seasonality Trend</h3>
+          <p class="sub" style="margin-bottom: 16px; font-size:12px;">แนวโน้มยอดขายและกำไร แยกตามวันที่มีออเดอร์</p>
+          <div style="height:270px"><canvas id="timeSeriesChart"></canvas></div>
+        </div>
+      </div>
+      
+      <!-- ROW 2: BCG Matrix (Item 4) -->
+      <div class="card" style="margin-bottom: 16px;">
+        <h3 style="margin-bottom: 4px;">4. Product Portfolio (Priority BCG Matrix)</h3>
+        <p class="sub" style="margin-bottom: 12px; font-size:13px;">
+          <b>Star</b> (เหลือง) ขายดีกำไรสูง ควรดันโฆษณาต่อ | <b>Cash Cow</b> (ฟ้า) ขายดีกำไรกลางๆ ช่วยหล่อเลี้ยงธุรกิจ<br/>
+          <b>Question Mark</b> (ม่วง) กำไรต่อชิ้นสูงแต่ขายน้อย ลองทำโปรโมชั่น | <b>Dog</b> (เทา) กำไรน้อยขายไม่ออก ควรลดสต๊อก
+        </p>
+        <div style="height: 380px; width: 100%;"><canvas id="bcgMatrixChart"></canvas></div>
+      </div>
+
+      <!-- ROW 3: Top Sales & Top Profit -->
+      <div class="grid2">
+        <div class="card" style="position: relative; height: 380px;">
+          <h3 style="margin-bottom: 16px;">Top 5 สินค้ากำไรสูงสุด (บาท)</h3>
+          <div style="height:300px"><canvas id="topProfitChart"></canvas></div>
+        </div>
+        <div class="card" style="position: relative; height: 380px;">
+          <h3 style="margin-bottom: 16px;">10 อันดับสินค้าขายดี (จำนวนชิ้น)</h3>
+          <div style="height:300px"><canvas id="salesQtyChart"></canvas></div>
+        </div>
+      </div>
+
     </div>
   </div>
 
