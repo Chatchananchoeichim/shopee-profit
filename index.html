@@ -473,7 +473,7 @@ function saveCostsToLocal() {
   localStorage.setItem('torque_cost_data', JSON.stringify(state.costData));
   
   // บันทึกลงฐานข้อมูลกลาง
-  if (dbRef && state.costData.length > 0) {
+  if (dbRef) {
      dbRef.set(state.costData).catch(function(error) {
        console.error("Firebase error: ", error);
        alert("ไม่สามารถบันทึกข้อมูลขึ้น Firebase ได้: อาจจะเกิดจาก Database Rules ไม่ได้เปิดให้เขียน หรือลิงก์ผิดพลาด \n\n(" + error.message + ")");
@@ -493,6 +493,7 @@ function resetDefaultCosts() {
   if(confirm('ต้องการล้างข้อมูลต้นทุนทั้งหมดใช่ไหม?')) {
     localStorage.removeItem('torque_cost_data');
     state.costData = defaultCosts.map((r, i) => ({ id: i+1, ...r }));
+    saveCostsToLocal();
     renderCostTable();
   }
 }
@@ -577,13 +578,15 @@ function saveCost(id){
 function duplicateCost(id){
   const row = state.costData.find(r => r.id === id);
   if(row){
-    const newId = Date.now();
-    const newRow = { ...row, id: newId };
-    const index = state.costData.findIndex(r => r.id === id);
-    state.costData.splice(index + 1, 0, newRow);
-    state.editingId = newId;
-    saveCostsToLocal();
-    renderCostTable();
+    if(confirm(`ต้องการคัดลอกข้อมูลต้นทุน ${row.sku || row.variant || row.product} ใช่หรือไม่?`)) {
+      const newId = Date.now();
+      const newRow = { ...row, id: newId };
+      const index = state.costData.findIndex(r => r.id === id);
+      state.costData.splice(index + 1, 0, newRow);
+      state.editingId = newId;
+      saveCostsToLocal();
+      renderCostTable();
+    }
   }
 }
 
@@ -594,6 +597,8 @@ function addCostRow(){
   const c = parseFloat(document.getElementById('new-cost').value);
   if(!s && !v && !p) { alert('กรุณากรอก SKU หรือชื่อตัวเลือก หรือ ชื่อสินค้า อย่างน้อยหนึ่งอย่าง'); return; }
   if(isNaN(c)) { alert('กรุณากรอกต้นทุนให้ถูกต้อง'); return; }
+  
+  if(!confirm(`ยืนยันการเพิ่มต้นทุนสินค้า: ${s || v || p} ในราคา ฿${c} ใช่หรือไม่?`)) return;
   
   state.costData.unshift({ id: Date.now(), sku: s, product: p, variant: v, cost: c });
   saveCostsToLocal();
