@@ -16,6 +16,14 @@
 <!-- Chart.js for Dashboard -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- JQuery and Select2 for Multiple Select filtering -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
 <!-- External CSS -->
 <link rel="stylesheet" href="assets/css/style.css">
 </head>
@@ -123,14 +131,20 @@
           </select> 
           รายการ/หน้า
         </div>
-        <div style="position:relative;">
-          <input type="text" id="cost-search" placeholder="ค้นหาด้วยชื่อสินค้า, SKU หรือตัวเลือก..." style="padding: 8px; width: 300px; border: 1px solid #ddd; border-radius: 4px; font-family: inherit; font-size: 14px; padding-right:32px;" onkeyup="filterCostTable()">
-          <button onclick="document.getElementById('cost-search').value=''; filterCostTable();" style="position:absolute; right:8px; top:10px; background:none; border:none; cursor:pointer; color:#999; font-size:12px;">✖</button>
+        <div style="position:relative; width:450px;">
+          <select id="cost-search" multiple="multiple" style="width: 100%;" data-placeholder="ค้นหาและเลือกสินค้า (เลือกได้หลายรายการ)..."></select>
+          <button onclick="$('#cost-search').val(null).trigger('change'); filterCostTable();" style="position:absolute; right:-24px; top:8px; background:none; border:none; cursor:pointer; color:#999; font-size:14px;" title="ล้างค่าการค้นหา">✖</button>
         </div>
       </div>
       <div class="cost-table-wrapper">
         <table id="cost-table">
-          <thead><tr><th style="width:20%">SKU</th><th style="width:25%">ชื่อสินค้า (บางส่วน)</th><th style="width:35%">ชื่อตัวเลือก (Variant)</th><th style="width:13%;text-align:right;">ต้นทุน (฿)</th><th style="width:7%"></th></tr></thead>
+          <thead><tr>
+            <th class="sortable" onclick="sortTable('cost','sku')" id="cost-th-sku">SKU <span class="sort-icon">⇅</span></th>
+            <th class="sortable" onclick="sortTable('cost','product')" id="cost-th-product">ชื่อสินค้า <span class="sort-icon">⇅</span></th>
+            <th class="sortable" onclick="sortTable('cost','variant')" id="cost-th-variant">ชื่อตัวเลือก (Variant) <span class="sort-icon">⇅</span></th>
+            <th class="sortable" onclick="sortTable('cost','cost')" id="cost-th-cost" style="text-align:right;width:13%">ต้นทุน (฿) <span class="sort-icon">⇅</span></th>
+            <th style="width:7%"></th>
+          </tr></thead>
           <tbody id="cost-tbody"></tbody>
         </table>
       </div>
@@ -161,6 +175,33 @@
         <div class="metric"><div class="label">ต้นทุนสินค้า (฿)</div><div class="value red" id="r-cost">-</div></div>
         <div class="metric"><div class="label">กำไรสุทธิ Net (฿)</div><div class="value green" id="r-net">-</div></div>
       </div>
+
+      <!-- Fee Summary Bar -->
+      <div id="fee-summary-bar" style="display:none;margin-bottom:16px;">
+        <div style="background:linear-gradient(135deg,#fff5f5 0%,#fff 100%);border:1px solid #fecaca;border-radius:12px;padding:16px 20px;">
+          <div style="font-size:11px;font-weight:700;color:#b91c1c;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:12px;">🧾 สรุปค่าธรรมเนียม Shopee สะสมทุกออเดอร์ที่สำเร็จ</div>
+          <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:stretch;">
+            <div style="flex:1;min-width:140px;background:#fff;border:1px solid #fecaca;border-radius:8px;padding:12px 16px;">
+              <div style="font-size:11px;color:#9ca3af;margin-bottom:4px;">ค่าคอมมิชชั่น</div>
+              <div style="font-size:18px;font-weight:700;color:#ef4444;" id="fee-total-comm">-</div>
+            </div>
+            <div style="flex:1;min-width:140px;background:#fff;border:1px solid #fecaca;border-radius:8px;padding:12px 16px;">
+              <div style="font-size:11px;color:#9ca3af;margin-bottom:4px;">ค่าบริการ</div>
+              <div style="font-size:18px;font-weight:700;color:#ef4444;" id="fee-total-serv">-</div>
+            </div>
+            <div style="flex:1;min-width:140px;background:#fff;border:1px solid #fecaca;border-radius:8px;padding:12px 16px;">
+              <div style="font-size:11px;color:#9ca3af;margin-bottom:4px;">ค่าธุรกรรม (ชำระเงิน)</div>
+              <div style="font-size:18px;font-weight:700;color:#ef4444;" id="fee-total-trans">-</div>
+            </div>
+            <div style="flex:1.5;min-width:180px;background:linear-gradient(135deg,#ef4444,#dc2626);border-radius:8px;padding:12px 16px;">
+              <div style="font-size:11px;color:rgba(255,255,255,0.8);margin-bottom:4px;">รวมค่าธรรมเนียมทั้งหมด</div>
+              <div style="font-size:22px;font-weight:800;color:#fff;" id="fee-total-all">-</div>
+              <div style="font-size:10px;color:rgba(255,255,255,0.75);margin-top:3px;" id="fee-total-pct"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="card">
         <div class="flex-between" style="margin-bottom:16px">
           <div>
@@ -194,14 +235,17 @@
           <table>
             <thead>
               <tr>
-                <th>Order ID</th>
-                <th>สินค้า / SKU</th>
+                <th class="sortable" onclick="sortTable('result','orderId')" id="result-th-orderId">Order ID <span class="sort-icon">⇅</span></th>
+                <th>ช่องทางชำระ</th>
+                <th class="sortable" onclick="sortTable('result','feePct')" id="result-th-feePct">% หัก <span class="sort-icon">⇅</span></th>
+                <th class="sortable" onclick="sortTable('result','product')" id="result-th-product">สินค้า / SKU <span class="sort-icon">⇅</span></th>
                 <th>Variant / ตัวเลือก</th>
-                <th style="text-align:center">จำนวน</th>
-                <th style="text-align:right">ยอดขาย</th>
-                <th style="text-align:right">Income โอน</th>
+                <th class="sortable" onclick="sortTable('result','qty')" id="result-th-qty" style="text-align:center">จำนวน <span class="sort-icon">⇅</span></th>
+                <th class="sortable" onclick="sortTable('result','salePrice')" id="result-th-salePrice" style="text-align:right">ยอดขาย <span class="sort-icon">⇅</span></th>
+                <th class="sortable" onclick="sortTable('result','shopeeFee')" id="result-th-shopeeFee" style="text-align:right">Shopee หัก(฿) <span class="sort-icon">⇅</span></th>
+                <th class="sortable" onclick="sortTable('result','income')" id="result-th-income" style="text-align:right">Income โอน <span class="sort-icon">⇅</span></th>
                 <th style="text-align:right">ต้นทุนรวม(ชิ้นนี้)</th>
-                <th style="text-align:right">Net กำไร(ออเดอร์)</th>
+                <th class="sortable" onclick="sortTable('result','net')" id="result-th-net" style="text-align:right">Net กำไร(ออเดอร์) <span class="sort-icon">⇅</span></th>
                 <th>สถานะ</th>
               </tr>
             </thead>
@@ -245,14 +289,14 @@
           <table>
             <thead>
               <tr>
-                <th>SKU</th>
-                <th>ชื่อสินค้า / ตัวเลือก</th>
-                <th style="text-align:right">ขายได้(ชิ้น)</th>
-                <th style="text-align:right">ยอดรับจริงรวม</th>
-                <th style="text-align:right">ต้นทุนรวม</th>
+                <th class="sortable" onclick="sortTable('summary','sku')" id="summary-th-sku">SKU <span class="sort-icon">⇅</span></th>
+                <th class="sortable" onclick="sortTable('summary','title')" id="summary-th-title">ชื่อสินค้า / ตัวเลือก <span class="sort-icon">⇅</span></th>
+                <th class="sortable" onclick="sortTable('summary','qty')" id="summary-th-qty" style="text-align:right">ขายได้(ชิ้น) <span class="sort-icon">⇅</span></th>
+                <th class="sortable" onclick="sortTable('summary','revenue')" id="summary-th-revenue" style="text-align:right">ยอดรับจริงรวม <span class="sort-icon">⇅</span></th>
+                <th class="sortable" onclick="sortTable('summary','cost')" id="summary-th-cost" style="text-align:right">ต้นทุนรวม <span class="sort-icon">⇅</span></th>
                 <th style="text-align:right">ต้นทุนเฉลี่ย/ชิ้น</th>
                 <th style="text-align:right">รับจริงเฉลี่ย/ชิ้น</th>
-                <th style="text-align:right">กำไรเฉลี่ย/ชิ้น</th>
+                <th class="sortable" onclick="sortTable('summary','profit')" id="summary-th-profit" style="text-align:right">กำไรเฉลี่ย/ชิ้น <span class="sort-icon">⇅</span></th>
               </tr>
             </thead>
             <tbody id="summary-tbody"></tbody>
@@ -284,18 +328,25 @@
         <div class="metric"><div class="label">สินค้าขาดทุน (SKUs)</div><div class="value red" id="d-loss-skus">-</div></div>
       </div>
 
-      <!-- ROW 1: Margin Tier (Item 2) & Seasonality (Item 3) -->
+      <!-- ROW 1: Cost Breakdown (Item 1) & Margin Tier (Item 2) -->
       <div class="grid2" style="margin-bottom:16px;">
+        <div class="card" style="position: relative; height: 380px;">
+          <h3 style="margin-bottom: 4px;">1. Cost & Fee Breakdown</h3>
+          <p class="sub" style="margin-bottom: 16px; font-size:12px;">สัดส่วนค่าใช้จ่าย: ต้นทุนสินค้าเทียบกับค่าธรรมเนียม</p>
+          <div style="height:270px"><canvas id="costBreakdownChart"></canvas></div>
+        </div>
         <div class="card" style="position: relative; height: 380px;">
           <h3 style="margin-bottom: 4px;">2. Pricing Intelligence</h3>
           <p class="sub" style="margin-bottom: 16px; font-size:12px;">โครงสร้างกำไร: A (>30%), B (15-30%), C (<15%)</p>
           <div style="height:270px"><canvas id="marginTierChart"></canvas></div>
         </div>
-        <div class="card" style="position: relative; height: 380px;">
-          <h3 style="margin-bottom: 4px;">3. Seasonality Trend</h3>
-          <p class="sub" style="margin-bottom: 16px; font-size:12px;">แนวโน้มยอดขายและกำไร แยกตามวันที่มีออเดอร์</p>
-          <div style="height:270px"><canvas id="timeSeriesChart"></canvas></div>
-        </div>
+      </div>
+
+      <!-- ROW 2: Seasonality Trend (Item 3) -->
+      <div class="card" style="margin-bottom: 16px;">
+        <h3 style="margin-bottom: 4px;">3. Seasonality Trend</h3>
+        <p class="sub" style="margin-bottom: 16px; font-size:12px;">แนวโน้มยอดขายและกำไร แยกตามวันที่มีออเดอร์</p>
+        <div style="height:320px"><canvas id="timeSeriesChart"></canvas></div>
       </div>
       
       <!-- ROW 2: BCG Matrix (Item 4) -->

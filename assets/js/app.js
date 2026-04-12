@@ -2,7 +2,7 @@ let state = {
   orderData: null,
   incomeData: null,
   costData: [],
-  costSearchQuery: '',
+  costSearchQueries: [],
   costCurrentPage: 1,
   costItemsPerPage: 20,
   results: [],
@@ -18,8 +18,42 @@ let state = {
   summaryCurrentPage: 1,
   summaryItemsPerPage: 100,
   summarySearchQuery: '',
-  charts: {}
+  charts: {},
+  sort: {
+    cost:    { col: null, dir: 'asc' },
+    result:  { col: null, dir: 'asc' },
+    summary: { col: null, dir: 'asc' }
+  }
 };
+
+// ─── Column Sort ──────────────────────────────────────────────
+function sortTable(table, col) {
+  const s = state.sort[table];
+  if (s.col === col) {
+    s.dir = s.dir === 'asc' ? 'desc' : 'asc';
+  } else {
+    s.col = col;
+    s.dir = 'asc';
+  }
+
+  // Update header visual
+  document.querySelectorAll(`th[id^="${table}-th-"]`).forEach(th => {
+    th.classList.remove('sort-asc', 'sort-desc');
+    const icon = th.querySelector('.sort-icon');
+    if (icon) icon.textContent = '⇅';
+  });
+  const activeTh = document.getElementById(`${table}-th-${col}`);
+  if (activeTh) {
+    activeTh.classList.add(s.dir === 'asc' ? 'sort-asc' : 'sort-desc');
+    const icon = activeTh.querySelector('.sort-icon');
+    if (icon) icon.textContent = s.dir === 'asc' ? '▲' : '▼';
+  }
+
+  // Re-render the correct table
+  if (table === 'cost')    { state.costCurrentPage = 1; renderCostTable(); }
+  if (table === 'result')  { state.currentPage = 1; renderResultTable(); }
+  if (table === 'summary') { state.summaryCurrentPage = 1; renderSummaryTable(); }
+}
 
 // Initialize Firebase automatically with the hardcoded config
 const firebaseConfig = {
@@ -42,7 +76,7 @@ function login() {
   const email = document.getElementById('auth-email').value.trim();
   const pass = document.getElementById('auth-pass').value.trim();
   if(!email || !pass) {
-    alert("กรุณากรอกอีเมลและรหัสผ่าน"); 
+    Swal.fire('ข้อมูลไม่ครบ', 'กรุณากรอกอีเมลและรหัสผ่าน', 'warning'); 
     return;
   }
   
@@ -50,9 +84,13 @@ function login() {
   btn.disabled = true;
   btn.innerText = "กำลังเข้าสู่ระบบ...";
 
-  firebase.auth().signInWithEmailAndPassword(email, pass)
+  // Set persistence to SESSION (cleared when browser closes)
+  firebase.auth().setPersistence(firebase.auth.Auth.Persistence.SESSION)
+    .then(() => {
+      return firebase.auth().signInWithEmailAndPassword(email, pass);
+    })
     .catch((error) => {
-      alert("ไม่สามารถเข้าสู่ระบบได้: " + error.message);
+      Swal.fire('เข้าสู่ระบบไม่สำเร็จ', "สาเหตุ: " + error.message, 'error');
       btn.disabled = false;
       btn.innerText = "เข้าสู่ระบบ";
     });
@@ -60,6 +98,21 @@ function login() {
 
 function logout() {
   firebase.auth().signOut();
+}
+
+// Idle Timeout Logic
+let inactivityTimer;
+const INACTIVITY_LIMIT_MS = 30 * 60 * 1000; // 30 minutes
+
+function resetInactivityTimer() {
+  if (state.currentUser) {
+    clearTimeout(inactivityTimer);
+    inactivityTimer = setTimeout(() => {
+      Swal.fire('เซสชันหมดอายุ', 'ไม่มีการใช้งานเป็นเวลานาน (30 นาที) กรุณาเข้าสู่ระบบใหม่เพื่อความปลอดภัย', 'warning').then(() => {
+        logout();
+      });
+    }, INACTIVITY_LIMIT_MS);
+  }
 }
 
 // Track Auth State changes
@@ -70,8 +123,15 @@ firebase.auth().onAuthStateChanged((user) => {
     document.getElementById('app-container').style.display = 'block';
     document.getElementById('user-email').innerText = user.email;
     initCostMap(); // Only fetch data if authenticated
+    
+    // Start idle timer and attach listeners
+    resetInactivityTimer();
+    ['mousemove', 'mousedown', 'keydown', 'touchstart'].forEach(evt => {
+      document.addEventListener(evt, resetInactivityTimer);
+    });
   } else {
     state.currentUser = null;
+    clearTimeout(inactivityTimer);
     document.getElementById('auth-container').style.display = 'flex';
     document.getElementById('app-container').style.display = 'none';
     if(dbRef) dbRef.off(); // stop listening
@@ -108,10 +168,11 @@ function importCostTable(event){
         }
       });
       saveCostsToLocal();
-      renderCostTable();
-      alert(`✅ อิมพอร์ตข้อมูลต้นทุนสำเร็จและอัปเดต จำนวน ${importedCount} รายการ!`);
+      if(importedCount > 0) {
+        Swal.fire('นำเข้าข้อมูลสำเร็จ', `อิมพอร์ตข้อมูลต้นทุนแล้ว จำนวน ${importedCount} รายการ`, 'success');
+      }
     } catch(err) {
-      alert("ไม่สามารถอ่านไฟล์ได้ กรุณาตรวจสอบฟอร์แมต Excel ให้ถูกต้อง: " + err.message);
+      Swal.fire('เกิดข้อผิดพลาด', "ไม่สามารถอ่านไฟล์ได้ กรุณาตรวจสอบฟอร์แมต Excel ให้ถูกต้อง: " + err.message, 'error');
     }
     event.target.value = '';
   };
@@ -123,24 +184,35 @@ function saveCostsToLocal() {
   
   if (dbRef) {
      const dataToSave = (state.costData && state.costData.length > 0) ? state.costData : null;
-     dbRef.set(dataToSave).catch(function(error) {
-       console.error("Firebase error: ", error);
-       alert("ไม่สามารถบันทึกข้อมูลขึ้น Firebase ได้: อาจจะเกิดจาก Database Rules ขอ Permission \n\n(" + error.message + ")");
-     });
+     dbRef.set(dataToSave).catch((error) => {
+       Swal.fire('ข้อผิดพลาดจากฐานข้อมูล', "ไม่สามารถบันทึกข้อมูลขึ้น Firebase ได้: อาจจะเกิดจากสิทธิ์การใช้งานของ Database\\n\\n(" + error.message + ")", 'error');
+       document.getElementById('sync-status').innerHTML = "🔴 ออฟไลน์ (บันทึกไม่สำเร็จ)";
+    });
   }
+  populateCostFilterDropdown();
 }
 
 function toggleFirebaseSetup() {}
 function connectFirebase(isAuto = false) { }
 function disconnectFirebase() { }
 
-function resetDefaultCosts() {
-  if(confirm('ต้องการล้างข้อมูลต้นทุนทั้งหมดใช่ไหม?')) {
-    localStorage.removeItem('torque_cost_data');
-    state.costData = [];
-    saveCostsToLocal();
-    renderCostTable();
-  }
+function resetDefaultCosts(){
+  Swal.fire({
+    title: 'ยืนยันการล้างข้อมูล?',
+    text: "คุุณต้องการล้างข้อมูลต้นทุนทั้งหมดใช่ไหม? ข้อมูลที่ถูกลบไปแล้วจะไม่สามารถกู้คืนได้",
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#e03131',
+    confirmButtonText: 'ใช่, ล้างข้อมูลทั้งหมด',
+    cancelButtonText: 'ยกเลิก'
+  }).then((result) => {
+    if(result.isConfirmed) {
+      state.costData = [];
+      if(dbRef) dbRef.set([]);
+      renderCostTable();
+      Swal.fire('สำเร็จ', 'ข้อมูลต้นทุนทั้งหมดถูกลบเรียบร้อยแล้ว', 'success');
+    }
+  });
 }
 
 function initCostMap(){
@@ -153,6 +225,7 @@ function initCostMap(){
          state.costData = [];
       }
       renderCostTable();
+      populateCostFilterDropdown();
       document.getElementById('sync-status').innerText = '● ออนไลน์ซิงก์เรียบร้อยแล้ว (Cloud)';
       document.getElementById('sync-status').style.color = 'var(--green)';
   }, (error) => {
@@ -164,15 +237,31 @@ function renderCostTable(){
   const tbody = document.getElementById('cost-tbody');
   tbody.innerHTML = '';
   
-  // Filter by search query
+  // Filter by search query & dropdown
   let filteredData = state.costData;
-  if(state.costSearchQuery) {
-    const q = state.costSearchQuery.toLowerCase();
-    filteredData = filteredData.filter(r => 
-      (r.sku && r.sku.toLowerCase().includes(q)) || 
-      (r.product && r.product.toLowerCase().includes(q)) ||
-      (r.variant && r.variant.toLowerCase().includes(q))
-    );
+
+  if(state.costSearchQueries && state.costSearchQueries.length > 0) {
+    filteredData = filteredData.filter(r => {
+      // return true if any of the multiple selected queries matches this row
+      return state.costSearchQueries.some(q => 
+        (r.sku && r.sku.toLowerCase().includes(q)) || 
+        (r.product && r.product.toLowerCase().includes(q)) ||
+        (r.variant && r.variant.toLowerCase().includes(q))
+      );
+    });
+  }
+
+  // Sort
+  const cs = state.sort.cost;
+  if (cs.col) {
+    const dir = cs.dir === 'asc' ? 1 : -1;
+    filteredData = [...filteredData].sort((a, b) => {
+      let va = (a[cs.col] || '').toString().toLowerCase();
+      let vb = (b[cs.col] || '').toString().toLowerCase();
+      if (cs.col === 'cost') { va = parseFloat(a.cost)||0; vb = parseFloat(b.cost)||0; }
+      if (typeof va === 'number') return (va - vb) * dir;
+      return va.localeCompare(vb, 'th') * dir;
+    });
   }
 
   // Pagination logic
@@ -224,9 +313,47 @@ function renderCostTable(){
 }
 
 function filterCostTable() {
-  state.costSearchQuery = document.getElementById('cost-search').value.trim();
+  const vals = $('#cost-search').val() || [];
+  state.costSearchQueries = vals.map(v => v.trim().toLowerCase()).filter(v=>v);
   state.costCurrentPage = 1;
   renderCostTable();
+}
+
+let isSelect2Initialized = false;
+
+function populateCostFilterDropdown() {
+  const $select = $('#cost-search');
+  if(!$select.length) return;
+  
+  if (!isSelect2Initialized) {
+    $select.select2({
+      placeholder: "ค้นหาและเลือกสินค้า (เลือกได้หลายรายการ)...",
+      allowClear: true,
+      width: '100%'
+    });
+    $select.on('change', function() {
+      filterCostTable();
+    });
+    isSelect2Initialized = true;
+  }
+  
+  const currentValues = $select.val() || [];
+  
+  const options = new Set();
+  state.costData.forEach(r => {
+    if(r.sku) options.add(r.sku);
+    if(r.product) options.add(r.product);
+  });
+  
+  const sortedOptions = Array.from(options).sort((a,b) => a.localeCompare(b));
+  
+  $select.empty();
+  sortedOptions.forEach(opt => {
+    $select.append(new Option(opt, opt, false, false));
+  });
+  
+  $select.val(currentValues);
+  $select.trigger('change.select2');
 }
 
 function renderCostPagination(totalPages) {
@@ -290,7 +417,10 @@ function saveCost(id){
   const p = document.getElementById('edit-prod-'+id).value.trim();
   const v = document.getElementById('edit-var-'+id).value.trim();
   const c = parseFloat(document.getElementById('edit-cost-'+id).value);
-  if(isNaN(c)) { alert('กรุณากรอกต้นทุนให้ถูกต้อง'); return; }
+  if(isNaN(c)) { 
+    Swal.fire('ข้อมูลไม่ถูกต้อง', 'กรุณากรอกราคาต้นทุนเป็นตัวเลขให้ถูกต้อง', 'warning'); 
+    return; 
+  }
   
   const row = state.costData.find(r => r.id === id);
   if(row){
@@ -307,15 +437,24 @@ function saveCost(id){
 function duplicateCost(id){
   const row = state.costData.find(r => r.id === id);
   if(row){
-    if(confirm(`ต้องการคัดลอกข้อมูลต้นทุน ${row.sku || row.variant || row.product} ใช่หรือไม่?`)) {
-      const newId = Date.now();
-      const newRow = { ...row, id: newId };
-      const index = state.costData.findIndex(r => r.id === id);
-      state.costData.splice(index + 1, 0, newRow);
-      state.editingId = newId;
-      saveCostsToLocal();
-      renderCostTable();
-    }
+    Swal.fire({
+      title: 'คัดลอกข้อมูล?',
+      text: `ต้องการคัดลอกข้อมูลต้นทุน ${row.sku || row.variant || row.product} ใช่หรือไม่?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'ใช่, คัดลอก',
+      cancelButtonText: 'ยกเลิก'
+    }).then((result) => {
+      if(result.isConfirmed) {
+        const newId = Date.now();
+        const newRow = { ...row, id: newId };
+        const index = state.costData.findIndex(r => r.id === id);
+        state.costData.splice(index + 1, 0, newRow);
+        state.editingId = newId;
+        saveCostsToLocal();
+        renderCostTable();
+      }
+    });
   }
 }
 
@@ -324,26 +463,51 @@ function addCostRow(){
   const p = document.getElementById('new-product').value.trim();
   const v = document.getElementById('new-variant').value.trim();
   const c = parseFloat(document.getElementById('new-cost').value);
-  if(!s && !v && !p) { alert('กรุณากรอก SKU หรือชื่อตัวเลือก หรือ ชื่อสินค้า อย่างน้อยหนึ่งอย่าง'); return; }
-  if(isNaN(c)) { alert('กรุณากรอกต้นทุนให้ถูกต้อง'); return; }
+  if(!s && !v && !p) { Swal.fire('ข้อมูลไม่ครบ', 'กรุณากรอก SKU หรือชื่อตัวเลือก หรือ ชื่อสินค้า อย่างน้อยหนึ่งอย่าง', 'warning'); return; }
+  if(isNaN(c)) { Swal.fire('ข้อผิดพลาด', 'กรุณากรอกต้นทุนให้ถูกต้อง', 'warning'); return; }
   
-  if(!confirm(`ยืนยันการเพิ่มต้นทุนสินค้า: ${s || v || p} ในราคา ฿${c} ใช่หรือไม่?`)) return;
-  
-  state.costData.unshift({ id: Date.now(), sku: s, product: p, variant: v, cost: c });
-  saveCostsToLocal();
-  document.getElementById('new-sku').value='';
-  document.getElementById('new-product').value='';
-  document.getElementById('new-variant').value='';
-  document.getElementById('new-cost').value='';
-  renderCostTable();
+  Swal.fire({
+    title: 'ยืนยันการบันทึกต้นทุน',
+    html: `เพิ่มข้อมูล: <b>${s || v || p}</b><br>ราคาต้นทุน: <b>฿${c}</b>`,
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: 'บันทึก',
+    cancelButtonText: 'ยกเลิก'
+  }).then((result) => {
+    if(result.isConfirmed) {
+      state.costData.unshift({ id: Date.now(), sku: s, product: p, variant: v, cost: c });
+      saveCostsToLocal();
+      document.getElementById('new-sku').value='';
+      document.getElementById('new-product').value='';
+      document.getElementById('new-variant').value='';
+      document.getElementById('new-cost').value='';
+      renderCostTable();
+      Swal.fire({ title: 'สำเร็จ', text: 'เพิ่มข้อมูลต้นทุนสำเร็จ', icon: 'success', timer: 1500, showConfirmButton: false });
+    }
+  });
 }
 
 function deleteCost(id){
-  if(confirm('ต้องการลบแบบถาวรหรือไม่?')){
-    state.costData = state.costData.filter(r => r.id !== id);
-    saveCostsToLocal();
-    renderCostTable();
-  }
+  const row = state.costData.find(r => r.id === id);
+  if(!row) return;
+  const itemName = [row.sku, row.product, row.variant].filter(Boolean).join(' / ') || 'บรรทัดนี้';
+  
+  Swal.fire({
+    title: 'ยืนยันการลบ?',
+    html: `ลบข้อมูลต้นทุน: <b>${itemName}</b><br>ข้อมูลนี้จะไม่สามารถกู้คืนได้!`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#e03131',
+    confirmButtonText: 'ใช่, ลบเลย',
+    cancelButtonText: 'ยกเลิก'
+  }).then((result) => {
+    if(result.isConfirmed) {
+      state.costData = state.costData.filter(r => r.id !== id);
+      saveCostsToLocal();
+      renderCostTable();
+      Swal.fire({ title: 'ลบแล้ว!', text: 'ลบข้อมูลต้นทุนเรียบร้อย', icon: 'success', timer: 1500, showConfirmButton: false });
+    }
+  });
 }
 
 function lookupCost(productName, variantName, sku){
@@ -401,7 +565,7 @@ function handleFile(input, type){
         document.getElementById('drop-income').classList.add('has-file');
       }
       checkReady();
-    } catch(err){ alert('ไม่สามารถอ่านไฟล์ได้: '+err.message); }
+    } catch(err){ Swal.fire('เกิดข้อผิดพลาดในการอ่านไฟล์', err.message, 'error'); }
   };
   reader.readAsArrayBuffer(file);
 }
@@ -446,15 +610,42 @@ function processFilesWithLoader() {
 }
 
 function processFiles(){
-  if(!state.orderData || !state.incomeData){ alert('กรุณาอัพโหลดไฟล์ทั้งสองก่อน'); return; }
+  if(!state.orderData || !state.incomeData){ 
+    Swal.fire('ข้อมูลไม่ครบถ้วน', 'กรุณาอัปโหลดไฟล์ทั้ง Order และ Income จากระบบของ Shopee ก่อนกดคำนวณครับ', 'warning'); 
+    return; 
+  }
 
   const incomeLookup = {};
   state.incomeData.forEach(row=>{
     const idKey = Object.keys(row).find(k=>k.includes('คำสั่งซื้อ')) || '';
     const amtKey = Object.keys(row).find(k=>k.includes('โอนแล้ว')) || '';
+    const payKey = Object.keys(row).find(k=>k.includes('ช่องทางการชำระเงินของผู้ซื้อ')) || '';
+    const pctKey = Object.keys(row).find(k=>k.includes('ค่าธรรมเนียม (%)')) || '';
+
+    // Exact-match fee columns from Shopee Income CSV
+    const rowKeys = Object.keys(row);
+    const commKey    = rowKeys.find(k => k === 'ค่าคอมมิชชั่น') || '';
+    const commAMSKey = rowKeys.find(k => k === 'ค่าคอมมิชชั่น AMS') || '';
+    const servKey    = rowKeys.find(k => k === 'ค่าบริการ') || '';
+    const platKey    = rowKeys.find(k => k.includes('โครงสร้างพื้นฐาน')) || '';
+    const transKey   = rowKeys.find(k => k.includes('ค่าธุรกรรมการชำระเงิน')) || '';
+    const shipDeductKey = rowKeys.find(k => k.includes('ค่าจัดส่งที่ Shopee ชำระโดยชื่อของคุณ')) || '';
+
     const orderId = String(row[idKey]||'').trim();
     const amount = parseFloat(row[amtKey]||0)||0;
-    if(orderId) incomeLookup[orderId] = amount;
+    if(orderId) {
+      incomeLookup[orderId] = {
+        amount,
+        payment: String(row[payKey]||''),
+        feePct: String(row[pctKey]||''),
+        commFee:    parseFloat(row[commKey]||0)||0,
+        commAMSFee: parseFloat(row[commAMSKey]||0)||0,
+        servFee:    parseFloat(row[servKey]||0)||0,
+        platFee:    parseFloat(row[platKey]||0)||0,
+        transFee:   parseFloat(row[transKey]||0)||0,
+        shipDeduct: parseFloat(row[shipDeductKey]||0)||0
+      };
+    }
   });
 
   const orders = {};
@@ -466,31 +657,47 @@ function processFiles(){
   const statusKey = findKey('สถานะการสั่งซื้อ');
   const productKey = findKey('ชื่อสินค้า');
   const variantKey = findKey('ชื่อตัวเลือก');
-  const priceKey = findKey('ราคาขาย','ยอดชำระเงิน','ยอดชำระ');
+  const sellingPriceKey = keys.find(k => k.trim() === 'ราคาขาย') || findKey('ราคาขาย');
+  const paidKey = findKey('ยอดชำระเงิน','ยอดชำระ');
   const qtyKey = findKey('จำนวน');
   const skuKey = findKey('SKU', 'sku', 'อ้างอิง');
   const dateKey = findKey('เวลาที่สั่งซื้อ', 'วันที่สั่งซื้อ', 'เวลาชำระเงิน', 'วันเวลา');
+  const payChannelKey = findKey('ช่องทางการชำระเงิน');
+  const feePctKey = findKey('ค่าธรรมเนียม (%)');
 
   state.orderData.forEach(row=>{
     const orderId = String(row[orderIdKey]||'').trim();
     if(!orderId) return;
     
     if(!orders[orderId]) {
+       const inc = incomeLookup[orderId] || {};
        orders[orderId] = {
          orderId,
          date: String(row[dateKey]||''),
          status: String(row[statusKey]||''),
          items: [],
-         income: incomeLookup[orderId]||0
+         income: inc.amount || 0,
+         paymentChannel: inc.payment || String(row[payChannelKey]||''),
+         feePct: inc.feePct || String(row[feePctKey]||''),
+         commFee:    inc.commFee    || 0,
+         commAMSFee: inc.commAMSFee || 0,
+         servFee:    inc.servFee    || 0,
+         platFee:    inc.platFee    || 0,
+         transFee:   inc.transFee   || 0,
+         shipDeduct: inc.shipDeduct || 0
        };
     }
     const product = String(row[productKey]||'');
     const variant = String(row[variantKey]||'');
     const sku = String(row[skuKey]||'');
     const qty = parseInt(row[qtyKey]||1)||1;
-    const salePrice = parseFloat(row[priceKey]||0)||0;
+    // ราคาขาย = selling price per item (ใช้คูณจำนวนเพื่อได้ยอดขายที่ถูกต้อง)
+    const sellingPrice = parseFloat(row[sellingPriceKey]||0) || parseFloat(row[paidKey]||0) || 0;
+    const paidPrice = parseFloat(row[paidKey]||0) || sellingPrice;
     
-    orders[orderId].items.push({ product, variant, sku, qty, salePrice });
+    // sellingPriceTotal สะสมไว้ที่ order สำหรับคำนวณ %
+    orders[orderId].sellingPriceTotal = (orders[orderId].sellingPriceTotal||0) + (sellingPrice * qty);
+    orders[orderId].items.push({ product, variant, sku, qty, salePrice: paidPrice });
   });
 
   const results = [];
@@ -561,6 +768,17 @@ function processFiles(){
     o.items.forEach((item, idx) => {
       results.push({
         orderId: o.orderId,
+        paymentChannel: o.paymentChannel,
+        feePct: o.feePct,
+        commFee:    o.commFee,
+        commAMSFee: o.commAMSFee,
+        servFee:    o.servFee,
+        platFee:    o.platFee,
+        transFee:   o.transFee,
+        shipDeduct: o.shipDeduct,
+        orderSalePrice: orderSalePrice,
+        // ราคาขาย (selling price) รวมทั้ง order สำหรับคำนวณ %
+        orderSellingPrice: o.sellingPriceTotal || orderSalePrice,
         status: o.status,
         product: item.product,
         variant: item.variant,
@@ -594,6 +812,29 @@ function processFiles(){
   document.getElementById('r-cost').textContent = Math.round(totalCost).toLocaleString();
   document.getElementById('r-net').textContent = Math.round(totalNet).toLocaleString();
 
+  // --- Fee Summary Bar ---
+  const feeBar = document.getElementById('fee-summary-bar');
+  if (feeBar) {
+    let fs_comm = 0, fs_serv = 0, fs_trans = 0;
+    results.forEach(r => {
+      if (r.isFirst && !r.isCancelled) {
+        fs_comm  += Math.abs(r.commFee  || 0);
+        fs_serv  += Math.abs(r.servFee  || 0);
+        fs_trans += Math.abs(r.transFee || 0);
+      }
+    });
+    const fs_total = fs_comm + fs_serv + fs_trans;
+    const grossSales = results.filter(r=>r.isFirst && !r.isCancelled).reduce((s,r)=>(s + (r.orderSellingPrice||r.orderSalePrice||0)),0);
+    const fs_pct = grossSales > 0 ? (fs_total / grossSales * 100) : 0;
+    const fmt = v => '\u0e3f' + Math.round(v).toLocaleString();
+    document.getElementById('fee-total-comm').textContent  = fmt(fs_comm);
+    document.getElementById('fee-total-serv').textContent  = fmt(fs_serv);
+    document.getElementById('fee-total-trans').textContent = fmt(fs_trans);
+    document.getElementById('fee-total-all').textContent   = fmt(fs_total);
+    document.getElementById('fee-total-pct').textContent   = `\u0e04\u0e34\u0e14\u0e40\u0e1b\u0e47\u0e19 ${fs_pct.toFixed(2)}% \u0e02\u0e2d\u0e07\u0e22\u0e2d\u0e14\u0e02\u0e32\u0e22\u0e17\u0e31\u0e49\u0e07\u0e2b\u0e21\u0e14`;
+    feeBar.style.display = 'block';
+  }
+
   renderResultTable();
   renderSummaryTable();
 
@@ -606,7 +847,7 @@ function processFiles(){
       const displayStr = data.sku ? `SKU: ${data.sku}` : `Variant: ${data.variant || data.product}`;
       mvHtml += `<div class="missing-row flex-between">
         <span style="font-size:12px">${displayStr}</span>
-        <button class="btn sm" onclick="prefillVariant('${data.sku||''}','${(data.variant||'').replace(/'/g,"\\'")}')">+ เพิ่ม Cost</button>
+        <button class="btn sm" onclick="prefillVariant('${(data.sku||'').replace(/'/g,"\\'")}','${(data.product||'').replace(/'/g,"\\'")}','${(data.variant||'').replace(/'/g,"\\'")}')">+ เพิ่ม Cost</button>
       </div>`;
     });
     mv.innerHTML = mvHtml;
@@ -629,6 +870,7 @@ function renderDashboard() {
   if(state.charts.bcg) state.charts.bcg.destroy();
   if(state.charts.topProfit) state.charts.topProfit.destroy();
   if(state.charts.salesQty) state.charts.salesQty.destroy();
+  if(state.charts.costBreakdown) state.charts.costBreakdown.destroy();
 
   let totalRevenue = state.summary.reduce((a,b)=>a+b.revenue, 0);
   let totalCost = state.summary.reduce((a,b)=>a+b.cost, 0);
@@ -673,7 +915,49 @@ function renderDashboard() {
   document.getElementById('d-profit-skus').innerText = skuProfitCount + ' SKUs';
   document.getElementById('d-loss-skus').innerText = lossCount + ' SKUs';
 
-  // 1. Margin Tier Chart
+  // 1. Cost & Fee Breakdown Chart
+  let sumComm = 0, sumCommAMS = 0, sumServ = 0, sumPlat = 0, sumTrans = 0, sumShip = 0;
+  state.results.forEach(r => {
+    if (r.isFirst && !r.isCancelled) {
+       sumComm    += Math.abs(r.commFee    || 0);
+       sumCommAMS += Math.abs(r.commAMSFee || 0);
+       sumServ    += Math.abs(r.servFee    || 0);
+       sumPlat    += Math.abs(r.platFee    || 0);
+       sumTrans   += Math.abs(r.transFee   || 0);
+       sumShip    += Math.abs(r.shipDeduct || 0);
+    }
+  });
+
+  const ctxCost = document.getElementById('costBreakdownChart').getContext('2d');
+  state.charts.costBreakdown = new Chart(ctxCost, {
+    type: 'pie',
+    data: {
+      labels: [
+        'ต้นทุนสินค้า',
+        'ค่าคอมมิชชั่น',
+        'ค่าบริการ',
+        'ค่าธุรกรรม (ชำระเงิน)'
+      ],
+      datasets: [{
+        data: [totalCost, sumComm, sumServ, sumTrans],
+        backgroundColor: ['#2b8a3e','#e67700','#f03e3e','#1c7ed6'],
+        borderWidth: 2, borderColor: '#fff'
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { 
+        legend: { position: 'right', labels: { font: { size: 10 }, boxWidth: 14 } },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.label}: ฿${Math.round(ctx.raw).toLocaleString()}`
+          }
+        }
+      }
+    }
+  });
+
+  // 2. Margin Tier Chart
   const ctxTier = document.getElementById('marginTierChart').getContext('2d');
   state.charts.marginTier = new Chart(ctxTier, {
     type: 'doughnut',
@@ -819,27 +1103,66 @@ function renderResultTable(){
   }
 
   // Pagination logic based on unique orders
-  const uniqueOrders = [...new Set(data.map(r => r.orderId))];
-  const totalOrders = uniqueOrders.length;
+  // Sort by order-level value — need unique order list first
+  const rs = state.sort.result;
+  let allUniqueOrders;
+  if (rs.col) {
+    const dir = rs.dir === 'asc' ? 1 : -1;
+    const orderMap = {};
+    data.filter(r => r.isFirst).forEach(r => {
+      orderMap[r.orderId] = r;
+    });
+    const sortVal = (r) => {
+      if (rs.col === 'orderId') return (r.orderId||'').toLowerCase();
+      if (rs.col === 'feePct') {
+        const sp = r.orderSellingPrice || r.orderSalePrice || 1;
+        return (Math.abs(r.commFee||0)+Math.abs(r.servFee||0)+Math.abs(r.transFee||0))/sp;
+      }
+      if (rs.col === 'product') return (r.product||'').toLowerCase();
+      if (rs.col === 'qty') return r.qty||0;
+      if (rs.col === 'salePrice') return r.salePrice||0;
+      if (rs.col === 'shopeeFee') return Math.max(0,(r.orderSalePrice||0)-(r.income||0));
+      if (rs.col === 'income') return r.income||0;
+      if (rs.col === 'net') return r.net||0;
+      return 0;
+    };
+    const orderedIds = Object.keys(orderMap).sort((a, b) => {
+      const va = sortVal(orderMap[a]);
+      const vb = sortVal(orderMap[b]);
+      if (typeof va === 'string') return va.localeCompare(vb, 'th') * dir;
+      return (va - vb) * dir;
+    });
+    allUniqueOrders = orderedIds;
+  } else {
+    allUniqueOrders = [...new Set(data.map(r => r.orderId))];
+  }
+  const totalOrders = allUniqueOrders.length;
   const totalPages = Math.ceil(totalOrders / state.itemsPerPage) || 1;
   
   if (state.currentPage > totalPages) state.currentPage = totalPages;
   if (state.currentPage < 1) state.currentPage = 1;
   
   const startIdx = (state.currentPage - 1) * state.itemsPerPage;
-  const pageOrders = new Set(uniqueOrders.slice(startIdx, startIdx + state.itemsPerPage));
+  const pageOrders = new Set(allUniqueOrders.slice(startIdx, startIdx + state.itemsPerPage));
   
-  const pageData = data.filter(r => pageOrders.has(r.orderId));
+  const pageData = data.filter(r => pageOrders.has(r.orderId))
+    .sort((a, b) => {
+      // Keep original item order within same orderId, matching sorted order list
+      const ai = allUniqueOrders.indexOf(a.orderId);
+      const bi = allUniqueOrders.indexOf(b.orderId);
+      if (ai !== bi) return ai - bi;
+      return 0;
+    });
 
   if (pageData.length === 0) {
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td colspan="9" style="text-align:center; padding:32px; color:var(--text-muted); font-size: 14px; background:#fbfbfb;">🔍 ไม่พบข้อมูลที่ค้นหา</td>`;
+    tr.innerHTML = `<td colspan="12" style="text-align:center; padding:32px; color:var(--text-muted); font-size: 14px; background:#fbfbfb;">🔍 ไม่พบข้อมูลที่ค้นหา</td>`;
     tbody.appendChild(tr);
   }
 
   pageData.forEach(r=>{
     const netStr = r.net!==null ? '฿'+Math.round(r.net).toLocaleString() : '—';
-    const netStyle = r.net!==null ? (r.net>=0?'color:var(--green);font-weight:600':'color:var(--red);font-weight:600') : 'color:var(--text-muted)';
+    const netStyle = r.net!==null ? (r.net>=0?'color:var(--green);font-weight:700':'color:var(--red);font-weight:700') : 'color:var(--text-muted)';
     const badge = r.isCancelled 
       ? '<span class="badge gray">ยกเลิก</span>' 
       : r.missingCost 
@@ -848,28 +1171,113 @@ function renderResultTable(){
     
     const tr = document.createElement('tr');
     let html = '';
-    
+
+    // --- Payment channel color mapping ---
+    const payColorMap = {
+      'SPayLater': { bg: '#fff3e0', color: '#e65100', label: 'SPayLater' },
+      'Mobile Banking': { bg: '#e3f2fd', color: '#1565c0', label: 'Mobile Banking' },
+      'QR': { bg: '#f3e5f5', color: '#6a1b9a', label: 'QR พร้อมเพย์' },
+      'บัตรเครดิต': { bg: '#f1f8e9', color: '#388e3c', label: 'บัตรเครดิต/เดบิต' },
+      'ShopeePay': { bg: '#fff8e1', color: '#f57f17', label: 'ShopeePay' },
+      'ยอดเงิน ShopeePay': { bg: '#fff8e1', color: '#f57f17', label: 'ShopeePay' },
+      'เก็บเงินปลายทาง': { bg: '#e8f5e9', color: '#2e7d32', label: 'COD' },
+    };
+    const payKey2 = Object.keys(payColorMap).find(k => (r.paymentChannel||'').includes(k)) || '';
+    const payStyle = payKey2 ? payColorMap[payKey2] : { bg: '#f5f5f5', color: '#555', label: r.paymentChannel || '-' };
+    const payLabel = payStyle.label.length > 14 ? payStyle.label.substring(0,13)+'…' : payStyle.label;
+    const payBadge = `<span style="display:inline-block;font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px;background:${payStyle.bg};color:${payStyle.color};white-space:nowrap;">${payLabel}</span>`;
+
     if(r.isFirst) {
-      html += `<td rowspan="${r.rowSpan}" style="font-size:12px;font-family:monospace;vertical-align:top" class="border-right">${r.orderId}</td>`;
+      // --- Fee % calculation ---
+      const sp = r.orderSellingPrice || r.orderSalePrice || 1;
+      const commPct  = (Math.abs(r.commFee  || 0) / sp * 100);
+      const servPct  = (Math.abs(r.servFee  || 0) / sp * 100);
+      const transPct = (Math.abs(r.transFee || 0) / sp * 100);
+      const totalPct = commPct + servPct + transPct;
+
+      const pctParts = [];
+      if (commPct > 0) pctParts.push(`<span title="ค่าคอมมิชชั่น">คอม ${commPct.toFixed(2)}%</span>`);
+      if (servPct > 0) pctParts.push(`<span title="ค่าบริการ">บริการ ${servPct.toFixed(2)}%</span>`);
+      if (transPct > 0) pctParts.push(`<span title="ค่าธุรกรรม">ธุรกรรม ${transPct.toFixed(2)}%</span>`);
+
+      const pctBreakdown = pctParts.length > 0
+        ? `<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:3px;">${
+            pctParts.map(p => `<span style="font-size:9px;padding:1px 5px;border-radius:10px;background:#fef2f2;color:#ef4444;">${p}</span>`).join('')
+          }</div>`
+        : '';
+
+      html += `<td rowspan="${r.rowSpan}" style="padding:10px 12px;vertical-align:middle;" class="border-right">
+        <div style="font-family:monospace;font-size:11px;color:var(--text-muted);letter-spacing:0.5px;">${r.orderId}</div>
+      </td>`;
+      html += `<td rowspan="${r.rowSpan}" style="padding:8px 10px;vertical-align:middle;text-align:center;">${payBadge}</td>`;
+      html += `<td rowspan="${r.rowSpan}" style="padding:8px 10px;vertical-align:middle;text-align:center;">
+        <div style="font-size:13px;font-weight:700;color:var(--red);">${totalPct > 0 ? totalPct.toFixed(2)+'%' : (r.feePct || '-')}</div>
+        ${pctBreakdown}
+      </td>`;
     }
-    
+
+    // Product + SKU cell
+    const skuChip = r.sku ? `<span style="display:inline-block;margin-top:2px;font-size:9px;font-weight:700;padding:1px 6px;background:#eff6ff;color:#1d4ed8;border-radius:4px;letter-spacing:0.5px;">${r.sku}</span>` : '';
     html += `
-        <td><div style="font-size:12px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.product}</div><div style="font-size:11px;color:var(--blue);font-weight:600">${r.sku||''}</div></td>
-        <td style="font-size:12px">${r.variant}</td>
-        <td style="text-align:center;font-weight:600">${r.qty}</td>
-        <td style="text-align:right">฿${(r.salePrice||0).toLocaleString()}</td>
+        <td style="padding:10px 12px;vertical-align:middle;">
+          <div style="font-size:12px;font-weight:500;color:var(--text);max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.product}">${r.product}</div>
+          ${skuChip}
+        </td>
+        <td style="padding:8px 10px;vertical-align:middle;font-size:12px;color:var(--text-muted);max-width:120px;">${r.variant}</td>
+        <td style="padding:8px;vertical-align:middle;text-align:center;">
+          <span style="display:inline-block;font-size:13px;font-weight:700;min-width:24px;">${r.qty}</span>
+        </td>
+        <td style="padding:8px 12px;vertical-align:middle;text-align:right;font-size:12px;color:var(--text-muted);">฿${(r.salePrice||0).toLocaleString()}</td>
     `;
-    
+
     if(r.isFirst) {
-      html += `<td rowspan="${r.rowSpan}" style="text-align:right;vertical-align:top;font-weight:500" class="border-right">฿${(r.income||0).toLocaleString()}</td>`;
+      // Shopee fee breakdown
+      const shopeeFee = Math.max(0, (r.orderSalePrice||0) - (r.income||0));
+      const feeItems = [
+        { label: 'คอมมิชชั่น', val: r.commFee },
+        { label: 'ค่าบริการ', val: r.servFee },
+        { label: 'ธุรกรรม', val: r.transFee }
+      ].filter(f => Math.abs(f.val||0) > 0);
+
+      const feeBreakdown = feeItems.length > 0
+        ? `<div style="margin-top:6px;border-top:1px dashed #fca5a5;padding-top:4px;">` +
+          feeItems.map(f =>
+            `<div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;color:#9ca3af;line-height:1.8;gap:8px;">
+              <span>${f.label}</span>
+              <span style="color:#f87171;font-weight:500;">-฿${Math.abs(f.val).toLocaleString(undefined,{maximumFractionDigits:0})}</span>
+            </div>`
+          ).join('') + `</div>`
+        : '';
+
+      html += `<td rowspan="${r.rowSpan}" style="padding:10px 12px;vertical-align:top;min-width:140px;" class="border-right">
+        <div style="display:flex;align-items:center;justify-content:flex-end;gap:4px;">
+          <span style="font-size:13px;font-weight:700;color:var(--red);">-฿${shopeeFee.toLocaleString(undefined,{maximumFractionDigits:0})}</span>
+        </div>
+        ${feeBreakdown}
+      </td>`;
+
+      html += `<td rowspan="${r.rowSpan}" style="padding:10px 12px;vertical-align:middle;text-align:right;font-size:13px;font-weight:600;" class="border-right">฿${(r.income||0).toLocaleString()}</td>`;
     }
-    
-    html += `<td style="text-align:right;color:var(--text-muted)">${r.itemCostTotal!==null?'฿'+r.itemCostTotal.toLocaleString():'—'}</td>`;
+
+    // Cost display
+    let costDisplay;
+    if (r.itemCostTotal !== null) {
+      costDisplay = `<span style="font-size:12px;color:var(--text-muted);">฿${(r.itemCostTotal||0).toLocaleString()}</span>`;
+    } else if (!r.isCancelled) {
+      const sku2 = (r.sku||'').replace(/'/g,"\\'");
+      const prod2 = (r.product||'').replace(/'/g,"\\'");
+      const vari2 = (r.variant||'').replace(/'/g,"\\'");
+      costDisplay = `<button class="btn sm" style="padding:2px 8px;font-size:10px;border-color:#fca5a5;color:var(--red);background:#fff5f5;" onclick="prefillVariant('${sku2}','${prod2}','${vari2}')">+ เพิ่มต้นทุน</button>`;
+    } else {
+      costDisplay = '<span style="color:#ccc;">—</span>';
+    }
+
+    html += `<td style="padding:8px 12px;vertical-align:middle;text-align:right;">${costDisplay}</td>`;
 
     if(r.isFirst){
       html += `
-        <td rowspan="${r.rowSpan}" style="text-align:right;vertical-align:top;${netStyle}" class="border-right">${netStr}</td>
-        <td rowspan="${r.rowSpan}" style="vertical-align:top">${badge}</td>
+        <td rowspan="${r.rowSpan}" style="padding:10px 12px;vertical-align:middle;text-align:right;font-size:14px;${netStyle}" class="border-right">${netStr}</td>
+        <td rowspan="${r.rowSpan}" style="padding:8px;vertical-align:middle;text-align:center;">${badge}</td>
       `;
     }
 
@@ -931,6 +1339,25 @@ function renderSummaryTable(){
       (r.sku && r.sku.toLowerCase().includes(q)) ||
       (r.title && r.title.toLowerCase().includes(q))
     );
+  }
+
+  // Sort
+  const ss = state.sort.summary;
+  if (ss.col) {
+    const dir = ss.dir === 'asc' ? 1 : -1;
+    data = [...data].sort((a, b) => {
+      if (ss.col === 'sku') return ((a.sku||'').localeCompare(b.sku||'', 'th')) * dir;
+      if (ss.col === 'title') return ((a.title||'').localeCompare(b.title||'', 'th')) * dir;
+      if (ss.col === 'qty') return (a.qty - b.qty) * dir;
+      if (ss.col === 'revenue') return (a.revenue - b.revenue) * dir;
+      if (ss.col === 'cost') return (a.cost - b.cost) * dir;
+      if (ss.col === 'profit') {
+        const pa = (a.qty > 0 ? a.revenue/a.qty : 0) - (a.qty > 0 ? a.cost/a.qty : 0);
+        const pb = (b.qty > 0 ? b.revenue/b.qty : 0) - (b.qty > 0 ? b.cost/b.qty : 0);
+        return (pa - pb) * dir;
+      }
+      return 0;
+    });
   }
 
   const totalItems = data.length;
@@ -1016,8 +1443,9 @@ function filterOrders(type){
   renderResultTable();
 }
 
-function prefillVariant(sku, variant){
+function prefillVariant(sku, product, variant){
   document.getElementById('new-sku').value = sku;
+  document.getElementById('new-product').value = product;
   document.getElementById('new-variant').value = variant;
   switchTab('cost');
   document.getElementById('new-cost').focus();
@@ -1029,7 +1457,7 @@ function getFormattedDateStr() {
 }
 
 function exportResult(){
-  if(!state.results.length){ alert('ไม่มีข้อมูล'); return; }
+  if(!state.results.length){ Swal.fire('ไม่มีข้อมูล', 'ไม่มีข้อมูลให้ดาวน์โหลด', 'info'); return; }
   const rows = state.results.map(r=>({
     'Order ID': r.orderId,
     'สถานะ': r.status,
@@ -1048,7 +1476,7 @@ function exportResult(){
 }
 
 function exportSummary(){
-  if(!state.summary.length){ alert('ไม่มีข้อมูล'); return; }
+  if(!state.summary.length){ Swal.fire('ไม่มีข้อมูล', 'ไม่มีข้อมูลให้ดาวน์โหลด', 'info'); return; }
   const rows = state.summary.map(r=>({
     'SKU': r.sku,
     'สินค้า/ตัวเลือก': r.title,
