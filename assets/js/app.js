@@ -432,6 +432,7 @@ function saveCost(id){
   }
   state.editingId = null;
   renderCostTable();
+  processFiles(true); // Sync results
 }
 
 function duplicateCost(id){
@@ -453,6 +454,7 @@ function duplicateCost(id){
         state.editingId = newId;
         saveCostsToLocal();
         renderCostTable();
+        processFiles(true); // Sync results
       }
     });
   }
@@ -482,6 +484,7 @@ function addCostRow(){
       document.getElementById('new-variant').value='';
       document.getElementById('new-cost').value='';
       renderCostTable();
+      processFiles(true); // Sync results in background
       Swal.fire({ title: 'สำเร็จ', text: 'เพิ่มข้อมูลต้นทุนสำเร็จ', icon: 'success', timer: 1500, showConfirmButton: false });
     }
   });
@@ -505,6 +508,7 @@ function deleteCost(id){
       state.costData = state.costData.filter(r => r.id !== id);
       saveCostsToLocal();
       renderCostTable();
+      processFiles(true); // Sync results
       Swal.fire({ title: 'ลบแล้ว!', text: 'ลบข้อมูลต้นทุนเรียบร้อย', icon: 'success', timer: 1500, showConfirmButton: false });
     }
   });
@@ -609,9 +613,9 @@ function processFilesWithLoader() {
   }, 150);
 }
 
-function processFiles(){
+function processFiles(isSilent = false){
   if(!state.orderData || !state.incomeData){ 
-    Swal.fire('ข้อมูลไม่ครบถ้วน', 'กรุณาอัปโหลดไฟล์ทั้ง Order และ Income จากระบบของ Shopee ก่อนกดคำนวณครับ', 'warning'); 
+    if(!isSilent) Swal.fire('ข้อมูลไม่ครบถ้วน', 'กรุณาอัปโหลดไฟล์ทั้ง Order และ Income จากระบบของ Shopee ก่อนกดคำนวณครับ', 'warning'); 
     return; 
   }
 
@@ -697,7 +701,11 @@ function processFiles(){
     
     // sellingPriceTotal สะสมไว้ที่ order สำหรับคำนวณ %
     orders[orderId].sellingPriceTotal = (orders[orderId].sellingPriceTotal||0) + (sellingPrice * qty);
-    orders[orderId].items.push({ product, variant, sku, qty, salePrice: paidPrice });
+    orders[orderId].items.push({ 
+      product, variant, sku, qty, 
+      salePrice: paidPrice,         // Paid amount for this line
+      unitSellingPrice: sellingPrice // Advertised unit price
+    });
   });
 
   const results = [];
@@ -754,7 +762,11 @@ function processFiles(){
         if(!skuSummaryMap[key]) {
           skuSummaryMap[key] = { sku: item.sku, title: item.product + (item.variant?' ('+item.variant+')':''), qty: 0, revenue: 0, cost: 0 };
         }
-        let ratio = orderSalePrice > 0 ? (item.salePrice / orderSalePrice) : (1 / o.items.length);
+        
+        // Use Selling Price Total (before discounts) as the ratio for fair distribution
+        const itemSellingTotal = (item.unitSellingPrice || 0) * item.qty;
+        const totalOrderSelling = o.sellingPriceTotal || orderSalePrice || 1;
+        let ratio = itemSellingTotal / totalOrderSelling;
         let itemRevenue = o.income * ratio;
         
         skuSummaryMap[key].qty += item.qty;
