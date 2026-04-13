@@ -515,21 +515,48 @@ function deleteCost(id){
 }
 
 function lookupCost(productName, variantName, sku){
-  if(sku){
-    for(const r of state.costData){
-      if(r.sku && r.sku.toLowerCase() === sku.toLowerCase()) return r.cost;
+  const s = (sku || '').toString().trim().toLowerCase();
+  const v = (variantName || '').toString().trim().toLowerCase();
+  const p = (productName || '').toString().trim().toLowerCase();
+
+  // 1. Priority: Exact SKU Match
+  if (s && s !== '-' && s !== 'none' && s !== 'n/a') {
+    const match = state.costData.find(r => (r.sku || '').toString().trim().toLowerCase() === s);
+    if (match) return match.cost;
+  }
+
+  // 2. Priority: Product Title + Variant Match
+  // Look for a record where the stored product title is a substring of the Shopee product name
+  for (const r of state.costData) {
+    const rP = (r.product || '').toString().trim().toLowerCase();
+    const rV = (r.variant || '').toString().trim().toLowerCase();
+
+    // Check if product title matches (Stored title must be part of Shopee title)
+    // If the stored product name is empty, we only match if SKU or Variant is unique
+    const productTitleMatch = rP && p.includes(rP);
+
+    if (productTitleMatch) {
+      // a) Exact variant match (including both empty)
+      if (rV === v) return r.cost;
+
+      // b) Stored variant is wildcard "(ทุก variant)" or empty, and Shopee variant is empty
+      const isStoredWildcard = !rV || rV === "(ทุก variant)" || rV === "any variant";
+      if (isStoredWildcard && v === "") return r.cost;
+
+      // c) Partial variant match (e.g. stored "Blue" matches Shopee "Light Blue")
+      if (rV && v && v.includes(rV) && rV.length > 1) return r.cost;
     }
   }
-  for(const r of state.costData){
-    if(r.variant && variantName && variantName.toLowerCase() === r.variant.toLowerCase()) return r.cost;
+
+  // 3. Fallback: Variant Match only (If the variant name is unique enough)
+  if (v && v !== "" && v.length > 2) {
+    const variantOnlyMatch = state.costData.find(r => {
+      const rV = (r.variant || '').toString().trim().toLowerCase();
+      return rV === v;
+    });
+    if (variantOnlyMatch) return variantOnlyMatch.cost;
   }
-  for(const r of state.costData){
-    if(r.variant && variantName && variantName.toLowerCase().includes(r.variant.toLowerCase()) && r.variant.length > 2){
-      if(!r.product || productName.toLowerCase().includes(r.product.toLowerCase().split('/')[0].trim())){
-        return r.cost;
-      }
-    }
-  }
+
   return null;
 }
 
