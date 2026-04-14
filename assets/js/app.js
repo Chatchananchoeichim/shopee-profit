@@ -738,12 +738,26 @@ function processFiles(isSilent = false){
   const results = [];
   const skuSummaryMap = {};
   const timeSeriesMap = {};
-  let totalIncome=0, totalCost=0, totalNet=0, successCount=0;
-  const missingVariants = new Map();
+   let totalIncome=0, totalCost=0, totalNet=0, successCount=0;
+   let totalGrossSales=0, cancelledCount=0, otherCount=0, allOrdersCount=0;
+   const missingVariants = new Map();
 
-  Object.values(orders).forEach(o => {
-    const isCancelled = o.status.includes('ยกเลิก');
-    let orderCost = 0;
+   const allOrdersValue = Object.values(orders);
+   allOrdersCount = allOrdersValue.length;
+
+   allOrdersValue.forEach(o => {
+     const isSuccess = o.status.includes('สำเร็จ');
+     const isCancelled = o.status.includes('ยกเลิก');
+     
+     if (isSuccess) { /* already handled in loop below but we'll use flags */ }
+     else if (isCancelled) cancelledCount++;
+     else otherCount++;
+
+     if(!isCancelled) {
+       totalGrossSales += (o.sellingPriceTotal || 0);
+     }
+
+     let orderCost = 0;
     let missingCost = false;
     let orderSalePrice = 0;
 
@@ -845,6 +859,12 @@ function processFiles(isSilent = false){
   })).sort((a,b) => a.date.localeCompare(b.date));
 
   state.currentPage = 1;
+
+  document.getElementById('r-total-orders').textContent = allOrdersCount.toLocaleString();
+  document.getElementById('r-sub-success').textContent = successCount.toLocaleString();
+  document.getElementById('r-sub-cancelled').textContent = cancelledCount.toLocaleString();
+  document.getElementById('r-sub-other').textContent = otherCount.toLocaleString();
+  document.getElementById('r-gross-sales').textContent = Math.round(totalGrossSales).toLocaleString();
 
   document.getElementById('r-orders').textContent = successCount.toLocaleString();
   document.getElementById('r-income').textContent = Math.round(totalIncome).toLocaleString();
@@ -1137,6 +1157,7 @@ function renderResultTable(){
     data = data.filter(r => 
       (r.orderId && r.orderId.toLowerCase().includes(q)) ||
       (r.product && r.product.toLowerCase().includes(q)) ||
+      (r.status && r.status.toLowerCase().includes(q)) ||
       (r.sku && r.sku.toLowerCase().includes(q))
     );
   }
@@ -1488,6 +1509,34 @@ function prefillVariant(sku, product, variant){
   document.getElementById('new-variant').value = variant;
   switchTab('cost');
   document.getElementById('new-cost').focus();
+}
+
+function filterByQuickStats(type, el) {
+  // Clear active state from all metrics
+  document.querySelectorAll('.metric').forEach(m => m.classList.remove('active'));
+  if (el) el.classList.add('active');
+
+  const searchInput = document.getElementById('result-search');
+  
+  if (type === 'all') {
+    state.filterMode = 'all';
+    searchInput.value = '';
+  } else if (type === 'success') {
+    state.filterMode = 'all';
+    searchInput.value = 'สำเร็จแล้ว';
+  } else if (type === 'cancelled') {
+    state.filterMode = 'all';
+    searchInput.value = 'ยกเลิก';
+  } else if (type === 'other') {
+    state.filterMode = 'all';
+    // Searching for status keywords that are NOT success/cancelled
+    // Since we don't have a negative search, we'll try 'จัดส่ง' or 'รอ' 
+    // Usually covers 'ที่ต้องจัดส่ง', 'กำลังจัดส่ง'
+    searchInput.value = 'จัดส่ง'; 
+  }
+  
+  state.currentPage = 1;
+  filterResultTable();
 }
 
 function getFormattedDateStr() {

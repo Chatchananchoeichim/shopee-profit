@@ -169,8 +169,27 @@
   <div id="tab-result" class="tab-content">
     <div id="result-empty" class="alert info">กด "คำนวณเลย" ในแท็บแรกก่อน เพื่อดูผลลัพธ์การคำนวณ</div>
     <div id="result-content" style="display:none">
-      <div class="grid4" style="margin-bottom:16px">
-        <div class="metric"><div class="label">ออเดอร์สำเร็จ</div><div class="value blue" id="r-orders">-</div></div>
+      <div class="metrics-grid" style="margin-bottom:16px">
+        <div class="metric clickable" onclick="filterByQuickStats('all', this)">
+          <div class="label">ออเดอร์จากไฟล์ (ทั้งหมด)</div>
+          <div class="value" id="r-total-orders">-</div>
+          <div class="sub-stats">
+            <div class="sub-item" onclick="event.stopPropagation(); filterByQuickStats('success', document.querySelector('.metric.clickable'))">
+              <span class="dot success"></span> สำเร็จ: <span id="r-sub-success">0</span> 
+            </div>
+            <div class="sub-item" onclick="event.stopPropagation(); filterByQuickStats('cancelled', document.querySelector('.metric.clickable'))">
+              <span class="dot danger"></span> ยกเลิก: <span id="r-sub-cancelled">0</span>
+            </div>
+            <div class="sub-item" onclick="event.stopPropagation(); filterByQuickStats('other', document.querySelector('.metric.clickable'))">
+              <span class="dot warning"></span> อื่นๆ: <span id="r-sub-other">0</span>
+            </div>
+          </div>
+        </div>
+        <div class="metric"><div class="label">ยอดขายรวม (฿)</div><div class="value amber" id="r-gross-sales">-</div></div>
+        <div class="metric clickable" onclick="filterByQuickStats('success', this)">
+          <div class="label">ออเดอร์สำเร็จ</div>
+          <div class="value blue" id="r-orders">-</div>
+        </div>
         <div class="metric"><div class="label">โอนเงินแล้ว (฿)</div><div class="value" id="r-income">-</div></div>
         <div class="metric"><div class="label">ต้นทุนสินค้า (฿)</div><div class="value red" id="r-cost">-</div></div>
         <div class="metric"><div class="label">กำไรสุทธิ Net (฿)</div><div class="value green" id="r-net">-</div></div>
