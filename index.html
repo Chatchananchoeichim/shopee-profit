@@ -28,13 +28,23 @@
 <!-- SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<!-- JQuery and Select2 for Multiple Select filtering -->
+<!-- JQuery and Select2 (Required for Cost Manager) -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
+<!-- Auto-Animate for Smooth UI Transitions -->
+<script src="https://cdn.jsdelivr.net/npm/@formkit/auto-animate@0.8.2/dist/index.umd.js"></script>
+
+<!-- PDF Generation -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<!-- Material Symbols for Icons -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+
 <!-- External CSS -->
-<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/style.css?v=1.1">
 </head>
 <body>
 
@@ -50,29 +60,78 @@
 </div>
 
 <!-- MAIN APP UI -->
-<div id="app-container" class="app" style="display: none;">
-  <div class="header">
-    <div class="header-text">
-      <h1>คำนวณกำไร Shopee</h1>
-      <p>อัพโหลดไฟล์ Order + Income → โปรแกรมคำนวณ Net กำไรให้อัตโนมัติ (รองรับหลายรายการ/ออเดอร์)</p>
+<div id="app-container" class="layout-wrapper" style="display: none;">
+  
+  <!-- NEW SIDEBAR NAV -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-area">
+        <span class="logo-icon">T</span>
+        <span class="logo-text">TORQUE</span>
+      </div>
+      <button class="theme-toggle" onclick="toggleTheme()" title="สลับโหมด มืด/สว่าง">
+        <span class="material-symbols-rounded">dark_mode</span>
+      </button>
     </div>
-    <div style="display:flex; align-items:center; gap: 16px;">
-      <span class="logo-badge">TORQUE</span>
-      <div class="user-info">
-        <span id="user-email"></span> | 
-        <a href="#" onclick="logout()" style="color:var(--red); text-decoration:none; font-weight:600;">(ออกจากระบบ)</a>
+
+    <nav class="sidebar-nav">
+      <button class="nav-item active" onclick="switchTab('import')">
+        <span class="material-symbols-rounded">upload_file</span>
+        <span>นำเข้าไฟล์</span>
+      </button>
+      <button class="nav-item" onclick="switchTab('cost')">
+        <span class="material-symbols-rounded">inventory_2</span>
+        <span>จัดการต้นทุน</span>
+      </button>
+      <button class="nav-item" onclick="switchTab('result')">
+        <span class="material-symbols-rounded">receipt_long</span>
+        <span>ผลลัพธ์รายออเดอร์</span>
+      </button>
+      <button class="nav-item" onclick="switchTab('summary')">
+        <span class="material-symbols-rounded">analytics</span>
+        <span>สรุปรายสินค้า</span>
+      </button>
+      <button class="nav-item" onclick="switchTab('ads')">
+        <span class="material-symbols-rounded">ads_click</span>
+        <span>วิเคราะห์โฆษณา</span>
+      </button>
+      <button class="nav-item" onclick="switchTab('dashboard')">
+        <span class="material-symbols-rounded">dashboard</span>
+        <span>Dashboard Insights</span>
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-pill">
+        <div class="user-avatar" id="user-initials">?</div>
+        <div class="user-meta">
+          <div id="user-email-sidebar" class="user-email">guest@torque.com</div>
+          <a href="#" onclick="logout()" class="logout-link">ออกจากระบบ</a>
+        </div>
       </div>
     </div>
-  </div>
+  </aside>
 
-  <div class="tabs">
-    <button class="tab active" onclick="switchTab('import')">1. นำเข้าไฟล์</button>
-    <button class="tab" onclick="switchTab('cost')">2. ตาราง Cost</button>
-    <button class="tab" onclick="switchTab('result')">3. ผลลัพธ์</button>
-    <button class="tab" onclick="switchTab('summary')">4. สรุปรายสินค้า</button>
-    <button class="tab" onclick="switchTab('ads')">5. วิเคราะห์ Shopee Ads</button>
-    <button class="tab" onclick="switchTab('dashboard')">6. Dashboard Analytics</button>
-  </div>
+  <main class="main-content">
+    <div class="top-bar">
+      <div class="page-info">
+        <h1 id="current-page-title">นำเข้าไฟล์</h1>
+        <p id="current-page-sub">อัพโหลดไฟล์จาก Shopee และเตรียมการคำนวณ</p>
+      </div>
+      <div class="top-bar-actions">
+        <button class="btn btn-pdf" id="btn-export-pdf" style="display:none;" onclick="exportProPDF()">
+          <span class="material-symbols-rounded">picture_as_pdf</span>
+          Export Reports
+        </button>
+        <div class="sync-indicator">
+          <span id="sync-status"><span id="sync-status-dot" class="sync-dot" style="background:var(--green)"></span></span>
+          <span id="sync-status-text">Cloud Protected</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- The original tabs are gone, contents are now here -->
+    <div id="tab-container-root">
 
   <!-- TAB 1 IMPORT -->
   <div id="tab-import" class="tab-content active">
@@ -135,7 +194,7 @@
         <div>
           <h3>ตาราง Cost ต้นทุน</h3>
           <p class="sub">ข้อมูลจะถูกซิงก์ดึงเก็บไว้บน Cloud ส่วนกลางอัตโนมัติ 
-            <span id="sync-status" style="font-size:12px;color:var(--text-faint); margin-left: 8px;">● ตรวจสอบการซิงก์...</span>
+            <span id="cost-sync-status" style="font-size:12px;color:var(--text-faint); margin-left: 8px;">● ตรวจสอบการซิงก์...</span>
           </p>
         </div>
         <div style="display:flex;gap:8px;">
@@ -198,28 +257,55 @@
     <div id="result-content" style="display:none">
       <div class="metrics-grid" style="margin-bottom:16px">
         <div class="metric clickable" onclick="filterByQuickStats('all', this)">
-          <div class="label">ออเดอร์จากไฟล์ (ทั้งหมด)</div>
-          <div class="value" id="r-total-orders">-</div>
+          <div class="label">ออเดอร์ (ทั้งหมด)</div>
+          <div class="value-row">
+            <div class="value" id="r-total-orders">-</div>
+            <div class="sparkline" id="spark-total-orders"></div>
+          </div>
           <div class="sub-stats">
-            <div class="sub-item" onclick="event.stopPropagation(); filterByQuickStats('success', document.querySelector('.metric.clickable'))">
+            <div class="sub-item" onclick="event.stopPropagation(); filterByQuickStats('success', this.closest('.metric'))">
               <span class="dot success"></span> สำเร็จ: <span id="r-sub-success">0</span> 
             </div>
-            <div class="sub-item" onclick="event.stopPropagation(); filterByQuickStats('cancelled', document.querySelector('.metric.clickable'))">
+            <div class="sub-item" onclick="event.stopPropagation(); filterByQuickStats('cancelled', this.closest('.metric'))">
               <span class="dot danger"></span> ยกเลิก: <span id="r-sub-cancelled">0</span>
-            </div>
-            <div class="sub-item" onclick="event.stopPropagation(); filterByQuickStats('other', document.querySelector('.metric.clickable'))">
-              <span class="dot warning"></span> อื่นๆ: <span id="r-sub-other">0</span>
             </div>
           </div>
         </div>
-        <div class="metric"><div class="label">ยอดขายรวม (฿)</div><div class="value amber" id="r-gross-sales">-</div></div>
+        <div class="metric">
+          <div class="label">ยอดขายรวม (฿)</div>
+          <div class="value-row">
+            <div class="value amber" id="r-gross-sales">-</div>
+            <div class="sparkline" id="spark-revenue"></div>
+          </div>
+        </div>
         <div class="metric clickable" onclick="filterByQuickStats('success', this)">
           <div class="label">ออเดอร์สำเร็จ</div>
-          <div class="value blue" id="r-orders">-</div>
+          <div class="value-row">
+            <div class="value blue" id="r-orders">-</div>
+            <div class="sparkline" id="spark-orders-success"></div>
+          </div>
         </div>
-        <div class="metric"><div class="label">โอนเงินแล้ว (฿)</div><div class="value" id="r-income">-</div></div>
-        <div class="metric"><div class="label">ต้นทุนสินค้า (฿)</div><div class="value red" id="r-cost">-</div></div>
-        <div class="metric"><div class="label">กำไรสุทธิ Net (฿)</div><div class="value green" id="r-net">-</div></div>
+        <div class="metric">
+          <div class="label">รายรับโอนแล้ว (฿)</div>
+          <div class="value-row">
+            <div class="value" id="r-income">-</div>
+            <div class="sparkline" id="spark-income"></div>
+          </div>
+        </div>
+        <div class="metric">
+          <div class="label">ต้นทุนรวม (฿)</div>
+          <div class="value-row">
+            <div class="value red" id="r-cost">-</div>
+            <div class="sparkline" id="spark-cost"></div>
+          </div>
+        </div>
+        <div class="metric">
+          <div class="label">กำไรสุทธิ Net (฿)</div>
+          <div class="value-row">
+            <div class="value green" id="r-net">-</div>
+            <div class="sparkline" id="spark-profit"></div>
+          </div>
+        </div>
       </div>
 
       <!-- Fee Summary Bar -->
@@ -293,7 +379,7 @@
                 <th class="sortable" onclick="sortTable('result','income')" id="result-th-income" style="text-align:right">Income โอน <span class="sort-icon">⇅</span></th>
                 <th style="text-align:right">ต้นทุนรวม(ชิ้นนี้)</th>
                 <th class="sortable" onclick="sortTable('result','net')" id="result-th-net" style="text-align:right">Net กำไร(ออเดอร์) <span class="sort-icon">⇅</span></th>
-                <th>สถานะ</th>
+                <th style="text-align:center; min-width:100px;">สถานะ</th>
               </tr>
             </thead>
             <tbody id="result-tbody"></tbody>
@@ -419,6 +505,52 @@
     <div id="dashboard-empty" class="alert info">กด "คำนวณเลย" ในแท็บแรกก่อน เพื่อวิเคราะห์ข้อมูลเชิงลึก</div>
     <div id="dashboard-content" style="display:none">
 
+      <!-- Main Summary Grid (Restored IDs) -->
+      <div class="metrics-grid" style="margin-bottom: 24px;">
+        <div class="card metric clickable" onclick="switchTab('result')">
+          <p class="label">ยอดคำสั่งซื้อสำเร็จ</p>
+          <div class="value-row">
+            <h2 id="d-orders" class="green">0</h2>
+            <div id="sparkline-orders" class="sparkline"></div>
+          </div>
+          <div class="sub-stats">
+            <div class="sub-item"><span class="dot success"></span> สำเร็จ <span id="d-sub-success">0</span></div>
+            <div class="sub-item"><span class="dot danger"></span> ยกเลิก <span id="d-sub-cancelled">0</span></div>
+            <div class="sub-item" title="สถานะอื่นๆ"><span class="dot warning"></span> อื่นๆ <span id="d-sub-other">0</span></div>
+          </div>
+          <!-- Hidden for ID compatibility -->
+          <span id="d-total-orders" style="display:none">0</span>
+          <span id="d-gross-sales" style="display:none">0</span>
+        </div>
+        
+        <div class="card metric clickable" onclick="switchTab('summary')">
+          <p class="label">รายได้สุทธิ (ยอดโอนจาก Shopee)</p>
+          <div class="value-row">
+            <h2 id="d-income" class="blue">0</h2>
+            <div id="sparkline-income" class="sparkline"></div>
+          </div>
+          <p style="font-size:11px; color:var(--text-faint); margin-top:12px;">ยอดจริงหลังจากหักค่าธรรมเนียมแล้ว</p>
+        </div>
+
+        <div class="card metric clickable" onclick="switchTab('cost')">
+          <p class="label">รวมต้นทุนสินค้า</p>
+          <div class="value-row">
+            <h2 id="d-cost" class="amber">0</h2>
+            <div id="sparkline-cost" class="sparkline"></div>
+          </div>
+          <p style="font-size:11px; color:var(--text-faint); margin-top:12px;">คำนวณตาม SKU/ตัวเลือกที่บันทึกไว้</p>
+        </div>
+
+        <div class="card metric">
+          <p class="label">กำไรสุทธิส่วนต่าง</p>
+          <div class="value-row">
+            <h2 id="d-net" class="green">0</h2>
+            <div id="sparkline-profit" class="sparkline"></div>
+          </div>
+          <p style="font-size:11px; color:var(--text-faint); margin-top:12px;">กำไรก่อนหักค่าโฆษณาและค่าใช้จ่ายอื่นๆ</p>
+        </div>
+      </div>
+
       <!-- KPI Box -->
       <div class="grid4" style="margin-bottom:16px">
         <div class="metric"><div class="label">Margin รวมภาพรวม (%)</div><div class="value green" id="d-margin">-</div></div>
@@ -428,15 +560,21 @@
       </div>
 
       <div id="ads-summary-dashboard" class="grid2" style="margin-bottom:16px; display:none;">
-        <div class="metric"><div class="label">รวมค่าโฆษณา Shopee Ads (฿)</div><div class="value red" id="d-total-ads">-</div></div>
-        <div class="metric"><div class="label">กำไรสุทธิหลังหักโฆษณา (Net)</div><div class="value green" id="d-net-after-ads">-</div></div>
+        <div class="card metric" style="background:var(--red-light); border-color:var(--red); padding: 20px;">
+          <p class="label" style="color:var(--red); font-size: 13px; font-weight: 700;">รวมค่าโฆษณา Shopee Ads (฿)</p>
+          <h2 id="d-total-ads" class="red" style="font-size: 32px; margin-top: 8px;">0</h2>
+        </div>
+        <div class="card metric" style="background:var(--green-light); border-color:var(--green); padding: 20px;">
+          <p class="label" style="color:var(--green); font-size: 13px; font-weight: 700;">กำไรสุทธิหลังหักโฆษณา (Net)</p>
+          <h2 id="d-net-after-ads" class="green" style="font-size: 32px; margin-top: 8px;">0</h2>
+        </div>
       </div>
 
       <div id="shop-stats-dashboard" class="grid4" style="margin-bottom:16px; display:none;">
-        <div class="metric"><div class="label">ยอดเข้าชม (Visitors)</div><div class="value" id="d-visitors">-</div></div>
-        <div class="metric"><div class="label">Conversion Rate (%)</div><div class="value blue" id="d-cr">-</div></div>
-        <div class="metric"><div class="label">ยอดสั่งสินค้ารวม (AOV)</div><div class="value amber" id="d-aov">-</div></div>
-        <div class="metric"><div class="label">อัตราการซื้อซ้ำ (%)</div><div class="value" id="d-repeat">-</div></div>
+        <div class="card metric" style="padding:16px"><p class="label">ยอดเข้าชม (Visitors)</p><div class="value" id="d-visitors">-</div></div>
+        <div class="card metric" style="padding:16px"><p class="label">Conversion Rate (%)</p><div class="value blue" id="d-cr">-</div></div>
+        <div class="card metric" style="padding:16px"><p class="label">ยอดสั่งสินค้ารวม (AOV)</p><div class="value amber" id="d-aov">-</div></div>
+        <div class="card metric" style="padding:16px"><p class="label">อัตราการซื้อซ้ำ (%)</p><div class="value" id="d-repeat">-</div></div>
       </div>
 
       <!-- ROW 1: Cost Breakdown (Item 1) & Margin Tier (Item 2) -->
@@ -467,9 +605,13 @@
                     <thead>
                         <tr>
                             <th>วันที่</th>
-                            <th class="text-right">ยอดขาย (Revenue)</th>
+                            <th class="text-right">Visitors</th>
+                            <th class="text-right">CR (%)</th>
+                            <th class="text-right">Orders</th>
+                            <th class="text-right">ยอดขาย (Gross)</th>
+                            <th class="text-right">รายรับ (Income)</th>
                             <th class="text-right">กำไร (Profit)</th>
-                            <th class="text-right">Margin (%)</th>
+                            <th class="text-right">Margin</th>
                         </tr>
                     </thead>
                     <tbody id="daily-performance-body">
@@ -505,6 +647,21 @@
     </div>
   </div>
 
+    </div> <!-- end tab-container-root -->
+  </main>
+</div> <!-- end layout-wrapper -->
+
+<!-- Skeleton Template (Hidden) -->
+<template id="skeleton-card">
+  <div class="card skeleton-item">
+    <div class="skeleton-shimmer h-20 w-1/2 mb-4"></div>
+    <div class="skeleton-shimmer h-40 w-full mb-2"></div>
+    <div class="skeleton-shimmer h-40 w-full"></div>
+  </div>
+</template>
+
+<div id="pdf-report-template" style="position: absolute; left: -9999px; width: 800px; padding: 40px; background: white;">
+  <!-- Hidden template for PDF generation -->
 </div>
 
 <!-- External Javascript Logics -->

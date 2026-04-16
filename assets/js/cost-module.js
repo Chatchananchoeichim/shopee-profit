@@ -42,11 +42,11 @@ function saveCostsToLocal() {
   localStorage.setItem('torque_cost_data', JSON.stringify(state.costData));
   
   if (dbRef) {
-     const dataToSave = (state.costData && state.costData.length > 0) ? state.costData : null;
-     dbRef.set(dataToSave).catch((error) => {
-       Swal.fire('ข้อผิดพลาดจากฐานข้อมูล', "ไม่สามารถบันทึกข้อมูลขึ้น Firebase ได้: อาจจะเกิดจากสิทธิ์การใช้งานของ Database\\n\\n(" + error.message + ")", 'error');
-       document.getElementById('sync-status').innerHTML = "🔴 ออฟไลน์ (บันทึกไม่สำเร็จ)";
-    });
+      const dataToSave = (state.costData && state.costData.length > 0) ? state.costData : null;
+      dbRef.set(dataToSave).catch((error) => {
+        Swal.fire('ข้อผิดพลาดจากฐานข้อมูล', "ไม่สามารถบันทึกข้อมูลขึ้น Firebase ได้: อาจจะเกิดจากสิทธิ์การใช้งานของ Database\n\n(" + error.message + ")", 'error');
+        if(document.getElementById('sync-status-text')) document.getElementById('sync-status-text').innerText = "🔴 ออฟไลน์ (บันทึกไม่สำเร็จ)";
+     });
   }
   populateCostFilterDropdown();
 }
@@ -81,8 +81,12 @@ function initCostMap(){
       }
       renderCostTable();
       populateCostFilterDropdown();
-      document.getElementById('sync-status').innerText = '● ออนไลน์ซิงก์เรียบร้อยแล้ว (Cloud)';
-      document.getElementById('sync-status').style.color = 'var(--green)';
+      if(document.getElementById('sync-status-text')) {
+        document.getElementById('sync-status-text').innerText = 'ออนไลน์ซิงก์เรียบร้อยแล้ว (Cloud)';
+      }
+      if(document.getElementById('sync-status-dot')) {
+        document.getElementById('sync-status-dot').style.background = 'var(--green)';
+      }
   }, (error) => {
       console.warn("Permission denied or error fetching init costs:", error);
   });
@@ -90,6 +94,7 @@ function initCostMap(){
 
 function renderCostTable(){
   const tbody = document.getElementById('cost-tbody');
+  if(!tbody) return;
   tbody.innerHTML = '';
   
   // Filter by search query & dropdown

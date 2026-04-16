@@ -1,5 +1,24 @@
 // Global Event Listeners & Initializations
 document.addEventListener('DOMContentLoaded', () => {
+  // Initialize Theme
+  if (state.theme === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    const icon = document.querySelector('.theme-toggle .material-symbols-rounded');
+    if (icon) icon.innerText = 'light_mode';
+  }
+
+  // Initialize Auto-Animate
+  if (typeof autoAnimate !== 'undefined') {
+    const containers = [
+      document.getElementById('tab-container-root'),
+      document.getElementById('result-tbody'),
+      document.getElementById('summary-tbody'),
+      document.getElementById('ads-tbody'),
+      document.getElementById('missing-variants')
+    ];
+    containers.forEach(el => { if(el) autoAnimate(el); });
+  }
+
   // Drag & Drop Handlers
   ['drop-order','drop-income','drop-ads','drop-stats'].forEach(id=>{
     const el = document.getElementById(id);
@@ -32,4 +51,12 @@ document.addEventListener('DOMContentLoaded', () => {
       },
     });
   }
+
+  // Set User Initials
+  const email = localStorage.getItem('shopee_user_email') || 'Guest';
+  document.getElementById('user-email-sidebar').innerText = email;
+  document.getElementById('user-initials').innerText = email.charAt(0).toUpperCase();
+
+  // Initial Tab
+  switchTab('import');
 });

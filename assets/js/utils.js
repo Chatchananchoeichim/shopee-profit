@@ -42,3 +42,36 @@ function showErrorMessage(title, details) {
     }
   });
 }
+async function exportProPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('p', 'mm', 'a4');
+  
+  Swal.fire({
+    title: 'กำลังสร้างรายงาน PDF...',
+    html: 'กรุณารอสักครู่ ระบบกำลังจัดเตรียมหน้ากระดาษและกราฟวิเคราะห์',
+    allowOutsideClick: false,
+    didOpen: () => { Swal.showLoading(); }
+  });
+
+  try {
+    const canvas = await html2canvas(document.getElementById('tab-container-root'), {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      backgroundColor: state.theme === 'dark' ? '#0f172a' : '#ffffff'
+    });
+    
+    const imgData = canvas.toDataURL('image/png');
+    const imgProps = doc.getImageProperties(imgData);
+    const pdfWidth = doc.internal.pageSize.getWidth();
+    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+    
+    doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+    doc.save(`Torque_Profit_Report_${getFormattedDateStr()}.pdf`);
+    
+    Swal.fire({ icon: 'success', title: 'ดาวน์โหลดสำเร็จ', text: 'บันทึกรายงาน PDF เรียบร้อยแล้ว', timer: 2000, showConfirmButton: false });
+  } catch (err) {
+    console.error(err);
+    Swal.fire('Error', 'ไม่สามารถสร้าง PDF ได้ในขณะนี้', 'error');
+  }
+}

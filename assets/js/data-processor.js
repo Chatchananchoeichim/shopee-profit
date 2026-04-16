@@ -177,11 +177,9 @@ function processFilesWithLoader() {
   Swal.fire({
     title: 'กำลังประมวลผลข้อมูล...',
     html: `
-      <div style="text-align:center;">
-        <lottie-player src="https://assets5.lottiefiles.com/packages/lf20_vnikbeve.json" 
-          background="transparent" speed="1" style="width: 200px; height: 200px; margin: 0 auto;" loop autoplay>
-        </lottie-player>
-        <p style="font-size:14px; color:var(--text-muted); margin-top:10px;">ระบบกำลังคำนวณกำไรสุทธิและวิเคราะห์ข้อมูล Ads ให้คุณ...</p>
+      <div style="text-align:center; padding: 20px;">
+        <div class="premium-loader"></div>
+        <p style="font-size:14px; color:var(--text-muted); margin-top:20px;">ระบบกำลังคำนวณกำไรสุทธิและวิเคราะห์ข้อมูล Ads ให้คุณ...</p>
       </div>
     `,
     showConfirmButton: false,
@@ -202,6 +200,8 @@ function processFilesWithLoader() {
 }
 
 function processFiles(skipTabSwitch = false){
+  // showSkeletons is destructive to the root, removing it to prevent UI loss.
+
   try {
     if(!state.orderData || !state.incomeData){ 
       if(!skipTabSwitch) Swal.fire('ข้อมูลไม่ครบถ้วน', 'กรุณาอัปโหลดไฟล์ทั้ง Order และ Income จากระบบของ Shopee ก่อนกดคำนวณครับ', 'warning'); 
@@ -335,6 +335,14 @@ function processFiles(skipTabSwitch = false){
     const results = [];
     const skuSummaryMap = {};
     const timeSeriesMap = {};
+    // Pre-initialize with dates from orders to ensure every day shows up
+    state.orderData.forEach(od => {
+       const rawDate = od['วันที่ทำการสั่งซื้อ'] || od['Order Creation Date'];
+       if(rawDate) {
+          const d = String(rawDate).split(' ')[0];
+          if(!timeSeriesMap[d]) timeSeriesMap[d] = { revenue: 0, profit: 0, visitors: 0, cr: 0, statRevenue: 0 };
+       }
+    });
      let totalIncome=0, totalCost=0, totalNet=0, successCount=0;
      let totalGrossSales=0, cancelledCount=0, otherCount=0, allOrdersCount=0;
      const missingVariants = new Map();
@@ -378,7 +386,16 @@ function processFiles(skipTabSwitch = false){
       const net = (!isCancelled && !missingCost) ? o.income - orderCost : null;
 
       let shortDate = 'ไม่ระบุ';
-      if(o.date) {
+      
+      // Better alignment: try to get actual Order Placement Date from state.orderData
+      const orderMatch = state.orderData.find(od => od['หมายเลขคำสั่งซื้อ'] === o.orderId);
+      if(orderMatch) {
+          const rawDate = orderMatch['เวลาที่สั่งซื้อ'] || orderMatch['Order Creation Date'];
+          if(rawDate) shortDate = String(rawDate).split(' ')[0];
+      }
+      
+      // Fallback to Income date if order date not found
+      if(shortDate === 'ไม่ระบุ' && o.date) {
           const d = o.date.split(' ')[0];
           if(d.length > 5) shortDate = d;
       }
@@ -453,22 +470,51 @@ function processFiles(skipTabSwitch = false){
     state.results = results;
     state.summary = Object.values(skuSummaryMap).sort((a,b) => b.qty - a.qty);
     
-    state.timeSeries = Object.keys(timeSeriesMap).map(k => ({
-       date: k, revenue: timeSeriesMap[k].revenue, profit: timeSeriesMap[k].profit
+    // Consolidate TimeSeries with Shop Stats if available
+    if (state.shopStats && state.shopStats.length > 0) {
+      state.shopStats.forEach(ss => {
+        if (!timeSeriesMap[ss.date]) {
+          timeSeriesMap[ss.date] = { revenue: 0, profit: 0, visitors: 0, cr: 0, aov: 0, orders: 0 };
+        }
+        timeSeriesMap[ss.date].visitors = ss.visitors;
+        timeSeriesMap[ss.date].statCR = ss.cr;
+        timeSeriesMap[ss.date].statAOV = ss.aov;
+        timeSeriesMap[ss.date].statRevenue = ss.gross;
+      });
+    }
+
+    state.timeSeries = Object.keys(timeSeriesMap).sort().map(date => ({
+      date,
+      ...timeSeriesMap[date],
+      orderCount: state.orderData.filter(o => {
+          const d = (o['วันที่ทำการสั่งซื้อ'] || o['Order Creation Date'] || '').split(' ')[0];
+          return d === date;
+      }).length
     })).sort((a,b) => a.date.localeCompare(b.date));
 
     state.currentPage = 1;
 
-    document.getElementById('r-total-orders').textContent = allOrdersCount.toLocaleString();
-    document.getElementById('r-sub-success').textContent = successCount.toLocaleString();
-    document.getElementById('r-sub-cancelled').textContent = cancelledCount.toLocaleString();
-    document.getElementById('r-sub-other').textContent = otherCount.toLocaleString();
-    document.getElementById('r-gross-sales').textContent = Math.round(totalGrossSales).toLocaleString();
+    const setText = (id, txt) => { const el = document.getElementById(id); if(el) el.textContent = txt; };
+    
+    setText('r-total-orders', allOrdersCount.toLocaleString());
+    setText('d-total-orders', allOrdersCount.toLocaleString());
+    setText('r-sub-success', successCount.toLocaleString());
+    setText('d-sub-success', successCount.toLocaleString());
+    setText('r-sub-cancelled', cancelledCount.toLocaleString());
+    setText('d-sub-cancelled', cancelledCount.toLocaleString());
+    setText('r-sub-other', otherCount.toLocaleString());
+    setText('d-sub-other', otherCount.toLocaleString());
+    setText('r-gross-sales', Math.round(totalGrossSales).toLocaleString());
+    setText('d-gross-sales', Math.round(totalGrossSales).toLocaleString());
 
-    document.getElementById('r-orders').textContent = successCount.toLocaleString();
-    document.getElementById('r-income').textContent = Math.round(totalIncome).toLocaleString();
-    document.getElementById('r-cost').textContent = Math.round(totalCost).toLocaleString();
-    document.getElementById('r-net').textContent = Math.round(totalNet).toLocaleString();
+    setText('r-orders', successCount.toLocaleString());
+    setText('d-orders', successCount.toLocaleString());
+    setText('r-income', Math.round(totalIncome).toLocaleString());
+    setText('d-income', Math.round(totalIncome).toLocaleString());
+    setText('r-cost', Math.round(totalCost).toLocaleString());
+    setText('d-cost', Math.round(totalCost).toLocaleString());
+    setText('r-net', Math.round(totalNet).toLocaleString());
+    setText('d-net', Math.round(totalNet).toLocaleString());
 
     // --- Fee Summary Bar ---
     const feeBar = document.getElementById('fee-summary-bar');
@@ -497,30 +543,167 @@ function processFiles(skipTabSwitch = false){
     renderSummaryTable();
 
     const mv = document.getElementById('missing-variants');
-    if(missingVariants.size===0){
-      mv.innerHTML = '<div class="alert success">✓ ทุกรายการมีข้อมูลต้นทุนครบถ้วน</div>';
-    } else {
-      let mvHtml = '<div class="alert warning">⚠ พบ '+missingVariants.size+' รายการออเดอร์ที่ยังไม่มีต้นทุน</div>';
-      missingVariants.forEach((data, k) => {
-        const displayStr = data.sku ? `SKU: ${data.sku}` : `Variant: ${data.variant || data.product}`;
-        mvHtml += `<div class="missing-row flex-between">
-          <span style="font-size:12px">${displayStr}</span>
-          <button class="btn sm" onclick="prefillVariant('${(data.sku||'').replace(/'/g,"\\'")}','${(data.product||'').replace(/'/g,"\\'")}','${(data.variant||'').replace(/'/g,"\\'")}')">+ เพิ่ม Cost</button>
-        </div>`;
-      });
-      mv.innerHTML = mvHtml;
+    if(mv) {
+      if(missingVariants.size===0){
+        mv.innerHTML = '<div class="alert success">✓ ทุกรายการมีข้อมูลต้นทุนครบถ้วน</div>';
+      } else {
+        let mvHtml = '<div class="alert warning">⚠ พบ '+missingVariants.size+' รายการออเดอร์ที่ยังไม่มีต้นทุน</div>';
+        missingVariants.forEach((data, k) => {
+          const displayStr = data.sku ? `SKU: ${data.sku}` : `Variant: ${data.variant || data.product}`;
+          mvHtml += `<div class="missing-row flex-between">
+            <span style="font-size:12px">${displayStr}</span>
+            <button class="btn sm" onclick="prefillVariant('${(data.sku||'').replace(/'/g,"\\'")}','${(data.product||'').replace(/'/g,"\\'")}','${(data.variant||'').replace(/'/g,"\\'")}')">+ เพิ่ม Cost</button>
+          </div>`;
+        });
+        mv.innerHTML = mvHtml;
+      }
     }
 
-    document.getElementById('result-empty').style.display='none';
-    document.getElementById('result-content').style.display='block';
-    document.getElementById('summary-empty').style.display='none';
-    document.getElementById('summary-content').style.display='block';
-    document.getElementById('dashboard-empty').style.display='none';
-    document.getElementById('dashboard-content').style.display='block';
+    const showEl = (id, hide) => { const el = document.getElementById(id); if(el) el.style.display = hide ? 'none' : 'block'; };
+    showEl('result-empty', true);
+    showEl('result-content', false);
+    showEl('summary-empty', true);
+    showEl('summary-content', false);
+    showEl('dashboard-empty', true);
+    showEl('dashboard-content', false);
+
     renderDashboard();
     if (!skipTabSwitch) switchTab('result');
   } catch (err) {
     console.error(err);
     showErrorMessage('เกิดข้อผิดพลาดระหว่างคำนวณ', 'ระบบพบปัญหาเกี่ยวกับรูปแบบข้อมูลในไฟล์ครับ ไม่สามารถคำนวณต่อได้<br><br>Error: ' + err.message);
   }
+}
+
+function handleStatsFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  const isXlsx = file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls');
+
+  reader.onload = function(e) {
+    try {
+      let rows = [];
+      if (isXlsx) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, {type: 'array'});
+        
+        // Priority: Sheet named "ยืนยันแล้ว", fallback to sheet index 1, fallback to sheet index 0
+        const sheetName = workbook.SheetNames.find(n => n.includes('ยืนยันแล้ว')) || workbook.SheetNames[1] || workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const range = XLSX.utils.decode_range(sheet['!ref']);
+        let headerRow = 0;
+        for (let r = range.s.r; r <= range.e.r; r++) {
+          let found = false;
+          for (let c = range.s.c; c <= range.e.c; c++) {
+            const cell = sheet[XLSX.utils.encode_cell({r, c})];
+            if (cell && cell.v && (String(cell.v).includes('Date') || String(cell.v).includes('ผู้เข้าชม'))) { headerRow = r; found = true; break; }
+          }
+          if (found) break;
+        }
+        rows = XLSX.utils.sheet_to_json(sheet, {range: headerRow});
+      } else {
+        rows = parseCSV(e.target.result);
+      }
+
+      const stats = [];
+      const findKey = (r, variants) => Object.keys(r).find(k => variants.some(v => k.includes(v)));
+      
+      const firstRow = rows[0] || {};
+      const kDate = findKey(firstRow, ['วันที่', 'Date']);
+      const kVisitors = findKey(firstRow, ['จำนวนผู้เยี่ยมชม', 'Visitors']);
+      const kCR = findKey(firstRow, ['อัตราการซื้อ', 'Conversion Rate']);
+      const kAOV = findKey(firstRow, ['ยอดขายเฉลี่ยต่อคำสั่งซื้อ', 'Sales per Order']);
+      const kRepeat = findKey(firstRow, ['กลับมาซื้อซ้ำ', 'Repeat Purchase']);
+      const kGross = findKey(firstRow, ['ยอดขายทั้งหมด', 'Total Sales', 'Gross Sales']);
+      
+      let summaryStats = null;
+      rows.forEach(r => {
+        let dateRaw = String(r[kDate] || '').trim();
+        if (!dateRaw || dateRaw === 'วันที่' || dateRaw === 'Date') return; 
+        
+        // Shopee Summary Row usually looks like "01-04-2026-15-04-2026" (4-part split)
+        const isRange = dateRaw.split('-').length > 3;
+
+        if (isRange) {
+          summaryStats = {
+            visitors: parseInt(String(r[kVisitors] || '0').replace(/,/g, '')),
+            cr: parseFloat(String(r[kCR] || '0').replace(/%/g, '')),
+            aov: parseFloat(String(r[kAOV] || '0').replace(/,/g, '')),
+            repeatRate: parseFloat(String(r[kRepeat] || '0').replace(/%/g, ''))
+          };
+          return;
+        }
+        
+        // Convert DD-MM-YYYY to YYYY-MM-DD
+        let normalizedDate = dateRaw;
+        if(dateRaw.includes('-')) {
+            const parts = dateRaw.split('-');
+            if(parts[0].length <= 2) normalizedDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+        }
+
+        stats.push({
+          date: normalizedDate,
+          visitors: parseInt(String(r[kVisitors] || '0').replace(/,/g, '')),
+          cr: parseFloat(String(r[kCR] || '0').replace(/%/g, '')),
+          aov: parseFloat(String(r[kAOV] || '0').replace(/,/g, '')),
+          gross: parseFloat(String(r[kGross] || '0').replace(/,/g, '')),
+          repeatRate: parseFloat(String(r[kRepeat] || '0').replace(/%/g, ''))
+        });
+      });
+
+      state.shopStats = stats;
+      state.shopStatsSummary = summaryStats;
+      document.getElementById('drop-stats').classList.add('has-file');
+      Swal.fire('สำเร็จ', 'โหลดข้อมูลสถิติร้านค้าเรียบร้อยแล้ว', 'success');
+      if (state.results.length > 0) renderDashboard();
+    } catch (err) {
+      console.error(err);
+      showErrorMessage('อ่านไฟล์สถิติไม่สำเร็จ', err.message);
+    }
+  };
+
+  if (isXlsx) reader.readAsArrayBuffer(file);
+  else reader.readAsText(file, 'UTF-8');
+}
+
+function parseCSV(text) {
+  const lines = text.split(/\r?\n/);
+  if (lines.length < 2) return [];
+  
+  let headerIdx = -1;
+  const headerSearch = (l) => l.includes('Date') || l.includes('วันที่') || l.includes('ผู้เข้าชม') || l.includes('เยี่ยมชม');
+  for(let i=0; i<lines.length; i++){
+    if(headerSearch(lines[i])){
+      headerIdx = i;
+      break;
+    }
+  }
+  if(headerIdx === -1) return [];
+
+  const splitCSV = (line) => {
+    const result = [];
+    let cur = '', inQuote = false;
+    for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        if (char === '"') inQuote = !inQuote;
+        else if (char === ',' && !inQuote) { result.push(cur.trim()); cur = ''; }
+        else cur += char;
+    }
+    result.push(cur.trim());
+    return result.map(v => v.replace(/^"|"$/g, '').trim());
+  };
+
+  const headers = splitCSV(lines[headerIdx]);
+  const results = [];
+  for (let i = headerIdx + 1; i < lines.length; i++) {
+    if (!lines[i].trim() || headerSearch(lines[i])) continue;
+    const values = splitCSV(lines[i]);
+    if (values.length < headers.length) continue;
+    const entry = {};
+    headers.forEach((h, idx) => { if(h) entry[h] = values[idx]; });
+    results.push(entry);
+  }
+  return results;
 }

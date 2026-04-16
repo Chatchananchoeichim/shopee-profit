@@ -4,6 +4,29 @@ function changeResultPerPage(val) {
   renderResultTable();
 }
 
+function filterOrders(type) {
+  state.filterMode = type;
+  state.currentPage = 1;
+  
+  // Update UI button state
+  document.querySelectorAll('.flex-gap .btn').forEach(b => {
+    b.classList.remove('active');
+    b.style.borderColor = 'var(--border)';
+    b.style.background = 'var(--surface)';
+    b.style.color = 'var(--text)';
+  });
+  
+  const btn = document.querySelector(`.flex-gap .btn[onclick*="'${type}'"]`);
+  if (btn) {
+    btn.classList.add('active');
+    btn.style.borderColor = 'var(--primary)';
+    btn.style.background = 'var(--primary-light)';
+    btn.style.color = 'var(--primary)';
+  }
+  
+  renderResultTable();
+}
+
 function filterResultTable(){
   state.resultSearchQuery = document.getElementById('result-search').value.trim();
   state.currentPage = 1;
@@ -12,6 +35,7 @@ function filterResultTable(){
 
 function renderResultTable(){
   const tbody = document.getElementById('result-tbody');
+  if(!tbody) return;
   tbody.innerHTML = '';
   
   let data = state.results;
@@ -283,6 +307,7 @@ function filterSummaryTable(){
 
 function renderSummaryTable(){
   const tbody = document.getElementById('summary-tbody');
+  if(!tbody) return;
   tbody.innerHTML = '';
   
   let data = state.summary;
@@ -399,10 +424,61 @@ function changeSummaryPerPage(val) {
   renderSummaryTable();
 }
 
-function filterOrders(type){
-  state.filterMode = type;
-  state.currentPage = 1;
-  renderResultTable();
+function switchTab(name){
+  // Sidebar UI Update
+  document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+  const activeBtn = document.querySelector(`.nav-item[onclick*="${name}"]`);
+  if (activeBtn) activeBtn.classList.add('active');
+
+  // Content Update
+  document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+  const targetContent = document.getElementById('tab-' + name);
+  if (targetContent) targetContent.classList.add('active');
+
+  // Page Info Update
+  const titles = {
+    'import': { t: 'นำเข้าไฟล์', s: 'อัพโหลดไฟล์จาก Shopee และเตรียมการคำนวณ' },
+    'cost': { t: 'จัดการต้นทุน', s: 'เพิ่มและแก้ไขต้นทุนสินค้าเพื่อคำนวณกำไร' },
+    'result': { t: 'ผลลัพธ์รายออเดอร์', s: 'ตรวจสอบรายละเอียดกำไรรายออเดอร์ที่คำนวณแล้ว' },
+    'summary': { t: 'สรุปรายสินค้า', s: 'วิเคราะห์ภาพรวมกำไรและยอดขายแยกตาม SKU' },
+    'ads': { t: 'วิเคราะห์โฆษณา', s: 'เจาะลึกประสิทธิภาพ Shopee Ads และความคุ้มค่า' },
+    'dashboard': { t: 'Dashboard Insights', s: 'ข้อมูลเชิงกลยุทธ์ผ่าน BCG Matrix และ Pricing Intelligence' }
+  };
+  
+  const info = titles[name] || { t: name, s: '' };
+  document.getElementById('current-page-title').innerText = info.t;
+  document.getElementById('current-page-sub').innerText = info.s;
+
+  // Show/Hide PDF button in Results or Dashboard or Summary
+  const pdfBtn = document.getElementById('btn-export-pdf');
+  if (['result', 'summary', 'dashboard'].includes(name) && state.results.length > 0) {
+    pdfBtn.style.display = 'flex';
+  } else {
+    pdfBtn.style.display = 'none';
+  }
+}
+
+function toggleTheme() {
+  state.theme = state.theme === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', state.theme);
+  localStorage.setItem('torque_theme', state.theme);
+  
+  const icon = document.querySelector('.theme-toggle .material-symbols-rounded');
+  icon.innerText = state.theme === 'dark' ? 'light_mode' : 'dark_mode';
+  
+  // Refresh charts for theme colors if on dashboard
+  if (document.getElementById('tab-dashboard').classList.contains('active')) {
+    renderDashboard();
+  }
+}
+
+function showSkeletons(parentId) {
+  const container = document.getElementById(parentId);
+  const template = document.getElementById('skeleton-card');
+  container.innerHTML = '';
+  for (let i = 0; i < 3; i++) {
+    container.appendChild(template.content.cloneNode(true));
+  }
 }
 
 function filterByQuickStats(type, el) {
@@ -416,8 +492,8 @@ function filterByQuickStats(type, el) {
     state.filterMode = 'all';
     searchInput.value = '';
   } else if (type === 'success') {
-    state.filterMode = 'all';
-    searchInput.value = 'สำเร็จแล้ว';
+    state.filterMode = 'success';
+    searchInput.value = '';
   } else if (type === 'cancelled') {
     state.filterMode = 'all';
     searchInput.value = 'ยกเลิก';

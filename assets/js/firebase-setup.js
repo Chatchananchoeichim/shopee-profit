@@ -63,9 +63,17 @@ firebase.auth().onAuthStateChanged((user) => {
   if (user) {
     state.currentUser = user;
     document.getElementById('auth-container').style.display = 'none';
-    document.getElementById('app-container').style.display = 'block';
-    document.getElementById('user-email').innerText = user.email;
-    initCostMap(); // Only fetch data if authenticated
+    document.getElementById('app-container').style.display = 'flex';
+    if(document.getElementById('user-email-sidebar')) {
+      document.getElementById('user-email-sidebar').innerText = user.email;
+    }
+    if(document.getElementById('sync-status-text')) {
+      document.getElementById('sync-status-text').innerText = 'ออนไลน์ซิงก์เรียบร้อยแล้ว (Cloud)';
+    }
+    if(document.getElementById('sync-status-dot')) {
+      document.getElementById('sync-status-dot').style.background = 'var(--green)';
+    }
+    initCostMap(); 
     
     // Start idle timer and attach listeners
     resetInactivityTimer();

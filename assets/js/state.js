@@ -30,7 +30,8 @@ let state = {
     summary: { col: null, dir: 'asc' },
     ads:     { col: null, dir: 'asc' }
   },
-  incomeOverrides: JSON.parse(localStorage.getItem('shopee_income_overrides') || '{}')
+  incomeOverrides: JSON.parse(localStorage.getItem('shopee_income_overrides') || '{}'),
+  theme: localStorage.getItem('torque_theme') || 'light',
 };
 
 // ─── Column Sort ──────────────────────────────────────────────
