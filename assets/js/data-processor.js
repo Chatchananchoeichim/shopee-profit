@@ -34,6 +34,119 @@ function handleFile(input, type){
   reader.readAsArrayBuffer(file);
 }
 
+function handleAdsFile(input) {
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, {type: 'array'});
+      const sheetName = wb.SheetNames[0];
+      const sheet = wb.Sheets[sheetName];
+      
+      // Convert to JSON (raw array of arrays to find header)
+      const raw = XLSX.utils.sheet_to_json(sheet, {header: 1, defval: ''});
+      
+      let headerIdx = raw.findIndex(row => (row || []).some(cell => String(cell).includes('รหัสสินค้า') || String(cell).includes('ชื่อโฆษณา')));
+      
+      if (headerIdx === -1) {
+        showErrorMessage('รูปแบบไฟล์ Ads ไม่ถูกต้อง', 'ไม่พบหัวตารางที่ต้องการ (รหัสสินค้า หรือ ชื่อโฆษณา) ในไฟล์นี้ครับ');
+        return;
+      }
+      
+      const headers = raw[headerIdx];
+      const dataRows = raw.slice(headerIdx + 1);
+      
+      state.adsData = dataRows.map(row => {
+        const obj = {};
+        headers.forEach((h, i) => {
+          if (h) obj[String(h).trim()] = row[i];
+        });
+        
+        const cleanNum = (v) => String(v || 0).replace(/,/g, '');
+        
+        return {
+          name: obj['ชื่อโฆษณา'] || '',
+          productId: obj['รหัสสินค้า'] || '',
+          clicks: parseInt(cleanNum(obj['จำนวนคลิก'])) || 0,
+          orders: parseInt(cleanNum(obj['การสั่งซื้อ'])) || 0,
+          adSpend: parseFloat(cleanNum(obj['ค่าโฆษณา'])) || 0,
+          adRevenue: parseFloat(cleanNum(obj['ยอดขาย'])) || 0,
+          roas: parseFloat(cleanNum(obj['ยอดขาย/รายจ่าย (ROAS)'])) || 0,
+          raw: obj
+        };
+      }).filter(d => d.productId || d.name);
+      
+      document.getElementById('ads-label').innerHTML = '✓ ' + file.name;
+      document.getElementById('drop-ads').classList.add('has-file');
+      
+      renderAdsTable();
+      if (state.results.length > 0) renderDashboard();
+      
+      document.getElementById('ads-empty').style.display = 'none';
+      document.getElementById('ads-content').style.display = 'block';
+      
+    } catch(err) {
+      showErrorMessage('เกิดข้อผิดพลาดในการอ่านไฟล์ Ads', 'ไม่สามารถอ่านไฟล์ได้: ' + err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function handleStatsFile(input) {
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, {type: 'array'});
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const raw = XLSX.utils.sheet_to_json(sheet, {defval: ''});
+      
+      if (!raw.length) {
+        showErrorMessage('ไฟล์ว่างเปล่า', 'ไม่พบข้อมูลในไฟล์ Shop Stats นี้ครับ');
+        return;
+      }
+
+      const row = raw[0]; 
+      const keys = Object.keys(row);
+      
+      const findVal = (variants) => {
+        const k = keys.find(k => variants.some(v => String(k).includes(v)));
+        return k ? row[k] : null;
+      };
+
+      const visitors = findVal(['ผู้เยี่ยมชม', 'ผู้เข้าชม', 'Visitors', 'ӹǹ']);
+      const cr       = findVal(['อัตราการซื้อ', 'Conversion Rate', 'ѵҡëԹ']);
+      const aov      = findVal(['ยอดขายเฉลี่ย', 'Basket Size', 'ʹµͤ觫']);
+      const repeat   = findVal(['ซื้อซ้ำ', 'Repeat', 'ѵҡáѺҫͫ']);
+
+      const cleanNumStr = (v) => {
+        if (v === null || v === undefined) return '0';
+        return String(v).replace(/,/g, '').replace(/"/g, '').trim() || '0';
+      };
+
+      state.shopStats = {
+        visitors: cleanNumStr(visitors),
+        cr: String(cr || '0%'),
+        aov: cleanNumStr(aov),
+        repeat: String(repeat || '0%')
+      };
+
+      document.getElementById('stats-label').innerHTML = '✓ ' + file.name;
+      document.getElementById('drop-stats').classList.add('has-file');
+
+      if (state.results.length > 0) renderDashboard();
+      
+    } catch(err) {
+      showErrorMessage('เกิดข้อผิดพลาดในการอ่านไฟล์', 'ไม่สามารถอ่านไฟล์ XLSX ได้: ' + err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
 function checkReady(){
   document.getElementById('btn-process').disabled = !(state.fileOrderLoaded && state.fileIncomeLoaded);
 }
@@ -103,7 +216,7 @@ function processFiles(skipTabSwitch = false){
     const paidKey = findKey('ยอดชำระเงิน','ยอดชำระ');
     const qtyKey = findKey('จำนวน');
     const skuKey = findKey('SKU', 'sku', 'อ้างอิง');
-    const dateKey = findKey('เวลาที่สั่งซื้อ', 'วันที่สั่งซื้อ', 'เวลาชำระเงิน', 'วันเวลา');
+    const dateKey = findKey('วันที่ทำการสั่งซื้อ', 'เวลาที่สั่งซื้อ', 'วันที่สั่งซื้อ', 'เวลาชำระเงิน', 'เวลาการชำระเงิน', 'วันเวลา', 'Order Creation', 'เวลาเริ่มต้น');
     const payChannelKey = findKey('ช่องทางการชำระเงิน');
     const feePctKey = findKey('ค่าธรรมเนียม (%)');
 

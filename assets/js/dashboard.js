@@ -11,6 +11,11 @@ function renderDashboard() {
   let totalNet = totalRevenue - totalCost;
   let overallMargin = totalRevenue > 0 ? (totalNet / totalRevenue) * 100 : 0;
 
+  // Ad Spend Calculation
+  let totalAdSpend = state.adsData.reduce((a, b) => a + b.adSpend, 0);
+  let netAfterAds = totalNet - totalAdSpend;
+  let marginAfterAds = totalRevenue > 0 ? (netAfterAds / totalRevenue) * 100 : 0;
+
   // Margin Tiers & BCG Data
   let tierA = 0, tierB = 0, tierC = 0, lossCount = 0;
   let skuProfitCount = 0;
@@ -48,6 +53,30 @@ function renderDashboard() {
   document.getElementById('d-star-count').innerText = starCount + ' SKUs';
   document.getElementById('d-profit-skus').innerText = skuProfitCount + ' SKUs';
   document.getElementById('d-loss-skus').innerText = lossCount + ' SKUs';
+
+  const adsDash = document.getElementById('ads-summary-dashboard');
+  if (adsDash) {
+    if (totalAdSpend > 0) {
+      document.getElementById('d-total-ads').innerText = '฿' + Math.round(totalAdSpend).toLocaleString();
+      document.getElementById('d-net-after-ads').innerText = '฿' + Math.round(netAfterAds).toLocaleString();
+      adsDash.style.display = 'grid';
+    } else {
+      adsDash.style.display = 'none';
+    }
+  }
+
+  const shopDash = document.getElementById('shop-stats-dashboard');
+  if (shopDash) {
+    if (state.shopStats) {
+      document.getElementById('d-visitors').innerText = parseInt(state.shopStats.visitors).toLocaleString();
+      document.getElementById('d-cr').innerText       = state.shopStats.cr;
+      document.getElementById('d-aov').innerText      = '฿' + Math.round(parseFloat(state.shopStats.aov)).toLocaleString();
+      document.getElementById('d-repeat').innerText   = state.shopStats.repeat;
+      shopDash.style.display = 'grid';
+    } else {
+      shopDash.style.display = 'none';
+    }
+  }
 
   // 1. Cost & Fee Breakdown Chart
   let sumComm = 0, sumCommAMS = 0, sumServ = 0, sumPlat = 0, sumTrans = 0, sumShip = 0;

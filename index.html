@@ -61,7 +61,8 @@
     <button class="tab" onclick="switchTab('cost')">2. ตาราง Cost</button>
     <button class="tab" onclick="switchTab('result')">3. ผลลัพธ์</button>
     <button class="tab" onclick="switchTab('summary')">4. สรุปรายสินค้า</button>
-    <button class="tab" onclick="switchTab('dashboard')">5. Dashboard Analytics</button>
+    <button class="tab" onclick="switchTab('ads')">5. วิเคราะห์ Shopee Ads</button>
+    <button class="tab" onclick="switchTab('dashboard')">6. Dashboard Analytics</button>
   </div>
 
   <!-- TAB 1 IMPORT -->
@@ -71,7 +72,7 @@
       <p class="sub">โหลดไฟล์ 2 ไฟล์ทุกเดือน — ไม่ต้องแก้ไขอะไรก่อนอัพโหลด</p>
       <div class="grid2" style="margin-bottom:16px">
         <div>
-          <p style="font-size:12px;color:var(--text-muted);margin-bottom:8px;font-weight:600">ไฟล์ Order (Order_all_*.xlsx)</p>
+          <p style="font-size:12px;color:var(--text-muted);margin-bottom:8px;font-weight:600">ไฟล์ Order (Order_all_*.xlsx) <span style="color:var(--red)">(จำเป็น)</span></p>
           <div class="upload-area" id="drop-order" onclick="document.getElementById('file-order').click()">
             <div class="icon">📦</div>
             <p id="order-label">คลิกเพื่อเลือกไฟล์ หรือลากมาวาง</p>
@@ -79,12 +80,28 @@
           <input type="file" id="file-order" accept=".xlsx,.xls" onchange="handleFile(this,'order')">
         </div>
         <div>
-          <p style="font-size:12px;color:var(--text-muted);margin-bottom:8px;font-weight:600">ไฟล์ Income (Income_*.xlsx)</p>
+          <p style="font-size:12px;color:var(--text-muted);margin-bottom:8px;font-weight:600">ไฟล์ Income (Income_*.xlsx) <span style="color:var(--red)">(จำเป็น)</span></p>
           <div class="upload-area" id="drop-income" onclick="document.getElementById('file-income').click()">
             <div class="icon">💰</div>
             <p id="income-label">คลิกเพื่อเลือกไฟล์ หรือลากมาวาง</p>
           </div>
           <input type="file" id="file-income" accept=".xlsx,.xls" onchange="handleFile(this,'income')">
+        </div>
+        <div>
+          <p style="font-size:12px;color:var(--text-muted);margin-bottom:8px;font-weight:600">ไฟล์ Shopee Ads (ข้อมูล-Shopee-Ads-*.csv) <span style="color:var(--blue)">(ตัวเลือก - ไม่บังคับ)</span></p>
+          <div class="upload-area" id="drop-ads" onclick="document.getElementById('file-ads').click()">
+            <div class="icon">📈</div>
+            <p id="ads-label">เลือกไฟล์โฆษณา (CSV)</p>
+          </div>
+          <input type="file" id="file-ads" accept=".csv" onchange="handleAdsFile(this)">
+        </div>
+        <div>
+          <p style="font-size:12px;color:var(--text-muted);margin-bottom:8px;font-weight:600">ไฟล์ Shop Stats (Shop_Performance_*.xlsx) <span style="color:var(--blue)">(ตัวเลือก - ไม่บังคับ)</span></p>
+          <div class="upload-area" id="drop-stats" onclick="document.getElementById('file-stats').click()">
+            <div class="icon">📊</div>
+            <p id="stats-label">เลือกไฟล์ Shop Stats (XLSX)</p>
+          </div>
+          <input type="file" id="file-stats" accept=".xlsx,.xls" onchange="handleStatsFile(this)">
         </div>
       </div>
       <div id="import-status"></div>
@@ -329,7 +346,58 @@
     </div>
   </div>
 
-  <!-- TAB 5 DASHBOARD -->
+  <!-- TAB 5 ADS -->
+  <div id="tab-ads" class="tab-content">
+    <div id="ads-empty" class="alert info">อัปโหลดไฟล์ "ข้อมูล Shopee Ads" (CSV) ในแท็บแรก เพื่อวิเคราะห์ประสิทธิภาพโฆษณา</div>
+    <div id="ads-content" style="display:none">
+      <div class="card">
+        <div class="flex-between" style="margin-bottom:16px">
+          <h3>วิเคราะห์ประสิทธิภาพ Shopee Ads</h3>
+          <button class="btn primary sm" onclick="exportAds()">Export Ads Report</button>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; margin-bottom: 12px; align-items: center;">
+          <div style="font-size: 14px; font-weight: 500; color: var(--text-muted);">
+            แสดง 
+            <select id="ads-per-page" onchange="changeAdsPerPage(this.value)" style="padding: 6px; border-radius: 4px; border: 1px solid #ddd; font-family: inherit;">
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="50" selected>50</option>
+              <option value="100">100</option>
+            </select> 
+            รายการ/หน้า
+            <span id="ads-count" style="margin-left: 10px; font-weight: 600; color: var(--blue);"></span>
+          </div>
+          <div style="position:relative;">
+            <input type="text" id="ads-search" placeholder="ค้นหาชื่อโฆษณา หรือรหัสสินค้า..." style="padding: 8px; width: 300px; border: 1px solid #ddd; border-radius: 4px; font-family: inherit; font-size: 14px; padding-right:32px;" onkeyup="filterAdsTable()">
+            <button onclick="document.getElementById('ads-search').value=''; filterAdsTable();" style="position:absolute; right:8px; top:10px; background:none; border:none; cursor:pointer; color:#999; font-size:12px;">✖</button>
+          </div>
+        </div>
+        
+        <div class="scroll-x">
+          <table id="ads-table">
+            <thead>
+              <tr>
+                <th class="sortable" onclick="sortTable('ads','name')" id="ads-th-name">ชื่อโฆษณา <span class="sort-icon">⇅</span></th>
+                <th class="sortable" onclick="sortTable('ads','productId')" id="ads-th-productId">รหัสสินค้า <span class="sort-icon">⇅</span></th>
+                <th class="sortable" onclick="sortTable('ads','clicks')" id="ads-th-clicks" style="text-align:right">คลิก <span class="sort-icon">⇅</span></th>
+                <th class="sortable" onclick="sortTable('ads','orders')" id="ads-th-orders" style="text-align:right">สั่งซื้อ <span class="sort-icon">⇅</span></th>
+                <th class="sortable" onclick="sortTable('ads','adSpend')" id="ads-th-adSpend" style="text-align:right">ค่าโฆษณา <span class="sort-icon">⇅</span></th>
+                <th class="sortable" onclick="sortTable('ads','adRevenue')" id="ads-th-adRevenue" style="text-align:right">ยอดขายโฆษณา <span class="sort-icon">⇅</span></th>
+                <th class="sortable" onclick="sortTable('ads','roas')" id="ads-th-roas" style="text-align:right">ROAS <span class="sort-icon">⇅</span></th>
+                <th style="text-align:right">CPC (฿)</th>
+                <th style="text-align:right">CR (%)</th>
+              </tr>
+            </thead>
+            <tbody id="ads-tbody"></tbody>
+          </table>
+        </div>
+        <div id="ads-pagination" class="pagination" style="margin-top: 16px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 6 DASHBOARD -->
   <div id="tab-dashboard" class="tab-content">
     <div class="flex-between" style="margin-bottom: 16px;">
       <div>
@@ -348,6 +416,18 @@
         <div class="metric" title="สินค้าขายดี+กำไรสูง ตาม BCG Matrix"><div class="label">สินค้ากลุ่ม Star 🌟</div><div class="value" id="d-star-count">-</div></div>
         <div class="metric"><div class="label">สินค้าทำกำไร (SKUs)</div><div class="value blue" id="d-profit-skus">-</div></div>
         <div class="metric"><div class="label">สินค้าขาดทุน (SKUs)</div><div class="value red" id="d-loss-skus">-</div></div>
+      </div>
+
+      <div id="ads-summary-dashboard" class="grid2" style="margin-bottom:16px; display:none;">
+        <div class="metric"><div class="label">รวมค่าโฆษณา Shopee Ads (฿)</div><div class="value red" id="d-total-ads">-</div></div>
+        <div class="metric"><div class="label">กำไรสุทธิหลังหักโฆษณา (Net)</div><div class="value green" id="d-net-after-ads">-</div></div>
+      </div>
+
+      <div id="shop-stats-dashboard" class="grid4" style="margin-bottom:16px; display:none;">
+        <div class="metric"><div class="label">ยอดเข้าชม (Visitors)</div><div class="value" id="d-visitors">-</div></div>
+        <div class="metric"><div class="label">Conversion Rate (%)</div><div class="value blue" id="d-cr">-</div></div>
+        <div class="metric"><div class="label">ยอดสั่งสินค้ารวม (AOV)</div><div class="value amber" id="d-aov">-</div></div>
+        <div class="metric"><div class="label">อัตราการซื้อซ้ำ (%)</div><div class="value" id="d-repeat">-</div></div>
       </div>
 
       <!-- ROW 1: Cost Breakdown (Item 1) & Margin Tier (Item 2) -->

@@ -11,6 +11,7 @@ let state = {
   fileOrderLoaded: false,
   fileIncomeLoaded: false,
   editingId: null,
+  shopStats: null,
   currentUser: null,
   currentPage: 1,
   itemsPerPage: 100,
@@ -18,11 +19,16 @@ let state = {
   summaryCurrentPage: 1,
   summaryItemsPerPage: 100,
   summarySearchQuery: '',
+  adsData: [],
+  adsCurrentPage: 1,
+  adsItemsPerPage: 50,
+  adsSearchQuery: '',
   charts: {},
   sort: {
     cost:    { col: null, dir: 'asc' },
     result:  { col: null, dir: 'asc' },
-    summary: { col: null, dir: 'asc' }
+    summary: { col: null, dir: 'asc' },
+    ads:     { col: null, dir: 'asc' }
   },
   incomeOverrides: JSON.parse(localStorage.getItem('shopee_income_overrides') || '{}')
 };
@@ -54,4 +60,5 @@ function sortTable(table, col) {
   if (table === 'cost')    { state.costCurrentPage = 1; renderCostTable(); }
   if (table === 'result')  { state.currentPage = 1; renderResultTable(); }
   if (table === 'summary') { state.summaryCurrentPage = 1; renderSummaryTable(); }
+  if (table === 'ads')     { state.adsCurrentPage = 1; renderAdsTable(); }
 }

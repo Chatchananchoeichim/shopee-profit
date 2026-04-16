@@ -524,3 +524,123 @@ function editIncomeOverride(orderId, currentVal) {
     }
   });
 }
+
+function changeAdsPerPage(val) {
+  state.adsItemsPerPage = parseInt(val, 10);
+  state.adsCurrentPage = 1;
+  renderAdsTable();
+}
+
+function filterAdsTable() {
+  state.adsSearchQuery = document.getElementById('ads-search').value.trim();
+  state.adsCurrentPage = 1;
+  renderAdsTable();
+}
+
+function renderAdsTable() {
+  const tbody = document.getElementById('ads-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  
+  let data = state.adsData;
+  if (state.adsSearchQuery) {
+    const q = state.adsSearchQuery.toLowerCase();
+    data = data.filter(d => 
+      (d.name && d.name.toLowerCase().includes(q)) ||
+      (d.productId && d.productId.toLowerCase().includes(q))
+    );
+  }
+
+  // Sort
+  const as = state.sort.ads;
+  if (as.col) {
+    const dir = as.dir === 'asc' ? 1 : -1;
+    data = [...data].sort((a, b) => {
+      let va = a[as.col], vb = b[as.col];
+      if (typeof va === 'string') return va.localeCompare(vb, 'th') * dir;
+      return (va - vb) * dir;
+    });
+  }
+
+  const totalItems = data.length;
+  const totalAvailableItems = state.adsData.length;
+  const countEl = document.getElementById('ads-count');
+  if (countEl) {
+    if (totalItems === totalAvailableItems) {
+      countEl.innerText = `(ทั้งหมด ${totalItems.toLocaleString()} รายการ)`;
+    } else {
+      countEl.innerText = `(พบ ${totalItems.toLocaleString()} จากทั้งหมด ${totalAvailableItems.toLocaleString()} รายการ)`;
+    }
+  }
+
+  const totalPages = Math.ceil(totalItems / state.adsItemsPerPage) || 1;
+  if (state.adsCurrentPage > totalPages) state.adsCurrentPage = totalPages;
+  if (state.adsCurrentPage < 1) state.adsCurrentPage = 1;
+
+  const startIdx = (state.adsCurrentPage - 1) * state.adsItemsPerPage;
+  const pageData = data.slice(startIdx, startIdx + state.adsItemsPerPage);
+
+  if (pageData.length === 0) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td colspan="9" style="text-align:center; padding:32px; color:var(--text-muted); font-size: 14px; background:#fbfbfb;">🔍 ไม่พบข้อมูลโฆษณาที่ค้นหา</td>`;
+    tbody.appendChild(tr);
+  }
+
+  pageData.forEach(d => {
+    const cpc = d.clicks > 0 ? d.adSpend / d.clicks : 0;
+    const cr = d.clicks > 0 ? (d.orders / d.clicks) * 100 : 0;
+    
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="font-size:12px; max-width:250px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${d.name}">${d.name}</td>
+      <td style="font-size:11px; color:var(--text-muted); font-family:monospace;">${d.productId}</td>
+      <td style="text-align:right">${d.clicks.toLocaleString()}</td>
+      <td style="text-align:right">${d.orders.toLocaleString()}</td>
+      <td style="text-align:right; color:var(--red); font-weight:600">฿${d.adSpend.toLocaleString()}</td>
+      <td style="text-align:right; color:var(--green)">฿${d.adRevenue.toLocaleString()}</td>
+      <td style="text-align:right; font-weight:700; color:${d.roas >= 5 ? 'var(--green)' : d.roas >= 2 ? 'var(--amber)' : 'var(--red)'}">${d.roas.toFixed(2)}</td>
+      <td style="text-align:right; color:var(--text-muted)">฿${cpc.toFixed(2)}</td>
+      <td style="text-align:right; color:var(--blue)">${cr.toFixed(2)}%</td>
+    `;
+    tbody.appendChild(tr);
+  });
+  
+  renderAdsPagination(totalPages);
+}
+
+function renderAdsPagination(totalPages) {
+  const container = document.getElementById('ads-pagination');
+  if (!container) return;
+  if (totalPages <= 1) { container.innerHTML = ''; return; }
+  
+  let html = `<button class="page-btn" ${state.adsCurrentPage === 1 ? 'disabled' : ''} onclick="changeAdsPage(${state.adsCurrentPage - 1})">❮ Prev</button>`;
+  for (let i = 1; i <= totalPages; i++) {
+    if (i === 1 || i === totalPages || (i >= state.adsCurrentPage - 2 && i <= state.adsCurrentPage + 2)) {
+      html += `<button class="page-btn ${i === state.adsCurrentPage ? 'active' : ''}" onclick="changeAdsPage(${i})">${i}</button>`;
+    } else if (i === state.adsCurrentPage - 3 || i === state.adsCurrentPage + 3) {
+      html += `<span style="color:var(--text-muted); padding:0 4px;">...</span>`;
+    }
+  }
+  html += `<button class="page-btn" ${state.adsCurrentPage === totalPages ? 'disabled' : ''} onclick="changeAdsPage(${state.adsCurrentPage + 1})">Next ❯</button>`;
+  container.innerHTML = html;
+}
+
+function changeAdsPage(p) {
+  state.adsCurrentPage = p;
+  renderAdsTable();
+}
+
+function exportAds() {
+  if (!state.adsData.length) { Swal.fire('ไม่มีข้อมูล', 'ไม่มีข้อมูลโฆษณาให้ดาวน์โหลด', 'info'); return; }
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(state.adsData.map(d => ({
+    'ชื่อโฆษณา': d.name,
+    'รหัสสินค้า': d.productId,
+    'จำนวนคลิก': d.clicks,
+    'การสั่งซื้อ': d.orders,
+    'ค่าโฆษณา': d.adSpend,
+    'ยอดขาย': d.adRevenue,
+    'ROAS': d.roas
+  }))), 'Ads_Analytics');
+  XLSX.writeFile(wb, `Torque_Ads_Report_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
