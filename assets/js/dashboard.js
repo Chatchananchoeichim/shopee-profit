@@ -1,4 +1,5 @@
 function renderDashboard() {
+  // Clear existing ApexCharts instances if they exist
   if(state.charts.marginTier) state.charts.marginTier.destroy();
   if(state.charts.timeSeries) state.charts.timeSeries.destroy();
   if(state.charts.bcg) state.charts.bcg.destroy();
@@ -14,7 +15,6 @@ function renderDashboard() {
   // Ad Spend Calculation
   let totalAdSpend = state.adsData.reduce((a, b) => a + b.adSpend, 0);
   let netAfterAds = totalNet - totalAdSpend;
-  let marginAfterAds = totalRevenue > 0 ? (netAfterAds / totalRevenue) * 100 : 0;
 
   // Margin Tiers & BCG Data
   let tierA = 0, tierB = 0, tierC = 0, lossCount = 0;
@@ -38,7 +38,9 @@ function renderDashboard() {
       sumRev += s.revenue;
       sumProfit += profit;
       bcgData.push({
-        x: s.revenue, y: profit, r: Math.max(8, Math.min(s.qty * 1.5, 30)),
+        x: Math.round(s.revenue), 
+        y: Math.round(profit), 
+        z: Math.max(8, Math.min(s.qty * 1.5, 30)),
         label: s.sku || s.title.substring(0, 15)
       });
     }
@@ -78,115 +80,65 @@ function renderDashboard() {
     }
   }
 
-  // 1. Cost & Fee Breakdown Chart
-  let sumComm = 0, sumCommAMS = 0, sumServ = 0, sumPlat = 0, sumTrans = 0, sumShip = 0;
+  // 1. Cost & Fee Breakdown Chart (ApexCharts Pie)
+  let sumComm = 0, sumServ = 0, sumTrans = 0;
   state.results.forEach(r => {
     if (r.isFirst && !r.isCancelled) {
        sumComm    += Math.abs(r.commFee    || 0);
-       sumCommAMS += Math.abs(r.commAMSFee || 0);
        sumServ    += Math.abs(r.servFee    || 0);
-       sumPlat    += Math.abs(r.platFee    || 0);
        sumTrans   += Math.abs(r.transFee   || 0);
-       sumShip    += Math.abs(r.shipDeduct || 0);
     }
   });
 
-  const ctxCost = document.getElementById('costBreakdownChart').getContext('2d');
-  state.charts.costBreakdown = new Chart(ctxCost, {
-    type: 'pie',
-    data: {
-      labels: [
-        'ต้นทุนสินค้า',
-        'ค่าคอมมิชชั่น',
-        'ค่าบริการ',
-        'ค่าธุรกรรม (ชำระเงิน)'
-      ],
-      datasets: [{
-        data: [totalCost, sumComm, sumServ, sumTrans],
-        backgroundColor: ['#2b8a3e','#e67700','#f03e3e','#1c7ed6'],
-        borderWidth: 2, borderColor: '#fff'
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { 
-        legend: { position: 'right', labels: { font: { size: 10 }, boxWidth: 14 } },
-        tooltip: {
-          callbacks: {
-            label: ctx => ` ${ctx.label}: ฿${Math.round(ctx.raw).toLocaleString()}`
-          }
-        }
-      }
-    }
-  });
+  const costBreakdownOptions = {
+    series: [Math.round(totalCost), Math.round(sumComm), Math.round(sumServ), Math.round(sumTrans)],
+    chart: { type: 'pie', height: 270, fontFamily: 'Sarabun, sans-serif' },
+    labels: ['ต้นทุนสินค้า', 'ค่าคอมมิชชั่น', 'ค่าบริการ', 'ค่าธุรกรรม'],
+    colors: ['#2b8a3e', '#e67700', '#f03e3e', '#1c7ed6'],
+    legend: { position: 'bottom' },
+    dataLabels: { enabled: true, formatter: val => val.toFixed(1) + "%" },
+    tooltip: { y: { formatter: val => '฿' + val.toLocaleString() } }
+  };
+  state.charts.costBreakdown = new ApexCharts(document.querySelector("#costBreakdownChart"), costBreakdownOptions);
+  state.charts.costBreakdown.render();
 
-  // 2. Margin Tier Chart
-  const ctxTier = document.getElementById('marginTierChart').getContext('2d');
-  state.charts.marginTier = new Chart(ctxTier, {
-    type: 'doughnut',
-    data: {
-      labels: ['Tier A (>30%)', 'Tier B (15-30%)', 'Tier C (<15%)', 'ขาดทุน'],
-      datasets: [{
-        data: [tierA, tierB, tierC, lossCount],
-        backgroundColor: ['#2b8a3e', '#74b816', '#fab005', '#e03131'],
-        borderWidth: 2, borderColor: '#fff'
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { position: 'right' } }
-    }
-  });
+  // 2. Margin Tier Chart (ApexCharts Donut)
+  const marginTierOptions = {
+    series: [tierA, tierB, tierC, lossCount],
+    chart: { type: 'donut', height: 270, fontFamily: 'Sarabun, sans-serif' },
+    labels: ['Tier A (>30%)', 'Tier B (15-30%)', 'Tier C (<15%)', 'ขาดทุน'],
+    colors: ['#2b8a3e', '#74b816', '#fab005', '#e03131'],
+    legend: { position: 'bottom' },
+    plotOptions: { pie: { donut: { labels: { show: true, total: { show: true, label: 'สินค้าทั้งหมด' } } } } }
+  };
+  state.charts.marginTier = new ApexCharts(document.querySelector("#marginTierChart"), marginTierOptions);
+  state.charts.marginTier.render();
 
-  // 3. Seasonality Chart (Time Series)
-  const ctxTime = document.getElementById('chart-timeseries').getContext('2d');
-  state.charts.timeSeries = new Chart(ctxTime, {
-    type: 'line',
-    data: {
-      labels: (state.timeSeries || []).map(d => d.date),
-      datasets: [
-        {
-          type: 'bar', label: 'ยอดขาย (Revenue)',
-          data: (state.timeSeries || []).map(d => d.revenue),
-          backgroundColor: '#a5d8ff', borderRadius: 4
-        },
-        {
-          type: 'line', label: 'กำไร (Profit)',
-          data: state.timeSeries.map(d=>d.profit),
-          borderColor: '#2b8a3e',
-          backgroundColor: '#2b8a3e',
-          yAxisID: 'y1',
-          fill: false,
-          tension: 0.3
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        x: { grid: { display: false } },
-        y: {
-          beginAtZero: true,
-          position: 'left',
-          title: { display: true, text: 'ยอดขาย (THB)' }
-        },
-        y1: {
-          beginAtZero: true,
-          position: 'right',
-          grid: { drawOnChartArea: false },
-          title: { display: true, text: 'กำไร (THB)' }
-        }
-      },
-      plugins: {
-        legend: { position: 'top' },
-        tooltip: {
-          mode: 'index',
-          intersect: false
-        }
-      }
-    }
-  });
+  // 3. Seasonality Chart (ApexCharts Mixed Line/Area)
+  const timeSeriesOptions = {
+    series: [{
+      name: 'ยอดขาย (Revenue)',
+      type: 'area',
+      data: (state.timeSeries || []).map(d => Math.round(d.revenue))
+    }, {
+      name: 'กำไร (Profit)',
+      type: 'line',
+      data: (state.timeSeries || []).map(d => Math.round(d.profit))
+    }],
+    chart: { height: 350, type: 'line', stacked: false, fontFamily: 'Sarabun, sans-serif', toolbar: { show: false } },
+    stroke: { width: [0, 3], curve: 'smooth' },
+    fill: { opacity: [0.35, 1], gradient: { inverseColors: false, shade: 'light', type: "vertical", opacityFrom: 0.85, opacityTo: 0.55, stops: [0, 100, 100, 100] } },
+    labels: (state.timeSeries || []).map(d => d.date),
+    markers: { size: 0 },
+    yaxis: [
+      { title: { text: 'ยอดขาย (THB)' }, labels: { formatter: val => val.toLocaleString() } },
+      { opposite: true, title: { text: 'กำไร (THB)' }, labels: { formatter: val => val.toLocaleString() } }
+    ],
+    colors: ['#3b82f6', '#10b981'],
+    tooltip: { shared: true, intersect: false, y: { formatter: val => '฿' + val.toLocaleString() } }
+  };
+  state.charts.timeSeries = new ApexCharts(document.querySelector("#chart-timeseries"), timeSeriesOptions);
+  state.charts.timeSeries.render();
 
   // Populate Daily Table
   const dailyBody = document.getElementById('daily-performance-body');
@@ -201,82 +153,66 @@ function renderDashboard() {
           <td class="text-right">${margin}%</td>
         </tr>
       `;
-    }).reverse().join(''); // Show latest first
+    }).reverse().join('');
   }
 
-  // 3. BCG Matrix
-  const scatterColors = bcgData.map(d => {
-    if(d.x >= avgRev && d.y >= avgProfit) return 'rgba(250, 176, 5, 0.8)'; // Star
-    if(d.x >= avgRev && d.y < avgProfit) return 'rgba(28, 126, 214, 0.8)'; // Cash Cow
-    if(d.x < avgRev && d.y >= avgProfit) return 'rgba(190, 75, 219, 0.8)'; // Question Mark
-    return 'rgba(134, 142, 150, 0.7)'; // Dog
-  });
-
-  const ctxBCG = document.getElementById('bcgMatrixChart').getContext('2d');
-  state.charts.bcg = new Chart(ctxBCG, {
-    type: 'bubble',
-    data: {
-      datasets: [{
-        label: 'สินค้า', data: bcgData,
-        backgroundColor: scatterColors,
-        borderColor: '#fff', borderWidth: 1
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            label: function(ctx) {
-              const d = ctx.raw;
-              return `${d.label} | ขาย: ฿${Math.round(d.x).toLocaleString()} | กำไร: ฿${Math.round(d.y).toLocaleString()}`;
-            }
-          }
-        }
-      },
-      scales: {
-        x: { title: { display: true, text: 'ยอดขายสุทธิ' }, grid: { color: (ctx) => ctx.tick.value === 0 ? '#333' : '#eee' } },
-        y: { title: { display: true, text: 'กำไร (Profit)' }, grid: { color: (ctx) => ctx.tick.value === 0 ? '#333' : '#eee' } }
+  // 4. BCG Matrix (ApexCharts Bubble)
+  const bcgOptions = {
+    series: [
+      { name: 'Star', data: bcgData.filter(d => d.x >= avgRev && d.y >= avgProfit) },
+      { name: 'Cash Cow', data: bcgData.filter(d => d.x >= avgRev && d.y < avgProfit) },
+      { name: 'Question Mark', data: bcgData.filter(d => d.x < avgRev && d.y >= avgProfit) },
+      { name: 'Dog', data: bcgData.filter(d => d.x < avgRev && d.y < avgProfit) }
+    ],
+    chart: { type: 'bubble', height: 380, fontFamily: 'Sarabun, sans-serif' },
+    dataLabels: { enabled: false },
+    fill: { opacity: 0.7 },
+    xaxis: { title: { text: 'ยอดขายสุทธิ' }, labels: { formatter: val => val.toLocaleString() } },
+    yaxis: { title: { text: 'กำไร (Profit)' }, labels: { formatter: val => val.toLocaleString() } },
+    colors: ['#fab005', '#1c7ed6', '#be4bdb', '#868e96'],
+    tooltip: {
+      custom: function({series, seriesIndex, dataPointIndex, w}) {
+        const item = w.config.series[seriesIndex].data[dataPointIndex];
+        return '<div class="apexcharts-tooltip-custom" style="padding:10px; font-size:12px; background:#fff; border:1px solid #ccc;">' +
+               '<b>' + item.label + '</b><br/>' +
+               'ยอดขาย: ฿' + item.x.toLocaleString() + '<br/>' +
+               'กำไร: ฿' + item.y.toLocaleString() +
+               '</div>';
       }
     }
-  });
+  };
+  state.charts.bcg = new ApexCharts(document.querySelector("#bcgMatrixChart"), bcgOptions);
+  state.charts.bcg.render();
 
-  // 4. Top Profit
+  // 5. Top Profit (ApexCharts Horizontal Bar)
   const sortedByProfit = [...state.summary].sort((a,b) => (b.revenue-b.cost) - (a.revenue-a.cost)).slice(0, 5);
-  const ctxTopProfit = document.getElementById('topProfitChart').getContext('2d');
-  state.charts.topProfit = new Chart(ctxTopProfit, {
-    type: 'bar',
-    data: {
-      labels: sortedByProfit.map(r => r.sku || r.title.substring(0,18)+'..'),
-      datasets: [{
-        data: sortedByProfit.map(r => r.revenue - r.cost),
-        backgroundColor: '#2b8a3e', borderRadius: 4
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: { y: { beginAtZero: true } }
-    }
-  });
+  const topProfitOptions = {
+    series: [{ name: 'กำไร', data: sortedByProfit.map(r => Math.round(r.revenue - r.cost)) }],
+    chart: { type: 'bar', height: 300, fontFamily: 'Sarabun, sans-serif' },
+    plotOptions: { bar: { horizontal: true, borderRadius: 4, barHeight: '60%' } },
+    colors: ['#2b8a3e'],
+    xaxis: { categories: sortedByProfit.map(r => r.sku || r.title.substring(0,18)+'...'), labels: { formatter: val => val.toLocaleString() } },
+    tooltip: { y: { formatter: val => '฿' + val.toLocaleString() } }
+  };
+  state.charts.topProfit = new ApexCharts(document.querySelector("#topProfitChart"), topProfitOptions);
+  state.charts.topProfit.render();
 
-  // 5. Top Qty
+  // 6. Top Qty (ApexCharts Bar)
   const sortedByQty = [...state.summary].sort((a,b) => b.qty - a.qty).slice(0, 10);
-  const ctxSalesQty = document.getElementById('salesQtyChart').getContext('2d');
-  state.charts.salesQty = new Chart(ctxSalesQty, {
-    type: 'bar',
-    data: {
-      labels: sortedByQty.map(r => r.sku || r.title.substring(0,18)+'..'),
-      datasets: [{
-        data: sortedByQty.map(r => r.qty),
-        backgroundColor: '#1c7ed6', borderRadius: 4
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: { y: { beginAtZero: true } }
-    }
+  const salesQtyOptions = {
+    series: [{ name: 'จำนวนชิ้น', data: sortedByQty.map(r => r.qty) }],
+    chart: { type: 'bar', height: 300, fontFamily: 'Sarabun, sans-serif' },
+    plotOptions: { bar: { borderRadius: 4, columnWidth: '50%' } },
+    colors: ['#1c7ed6'],
+    xaxis: { categories: sortedByQty.map(r => r.sku || r.title.substring(0,18)+'...'), labels: { show: false } },
+    tooltip: { y: { formatter: val => val + ' ชิ้น' } }
+  };
+  state.charts.salesQty = new ApexCharts(document.querySelector("#salesQtyChart"), salesQtyOptions);
+  state.charts.salesQty.render();
+
+  // Initialize Tippy Tooltips
+  tippy('[title]', {
+    animation: 'shift-away',
+    theme: 'light-border',
   });
 }

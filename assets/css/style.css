@@ -23,10 +23,30 @@
   --amber: #f59e0b;
   --amber-light: #fffbeb;
   
-  --radius: 12px;
-  --radius-sm: 8px;
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* ApexCharts Overrides */
+.apexcharts-canvas { margin: 0 auto; }
+.apexcharts-tooltip { border-radius: 12px !important; box-shadow: var(--shadow) !important; border: 1px solid var(--border) !important; }
+.apexcharts-tooltip-title { font-weight: 700 !important; border-bottom: 1px solid var(--border) !important; }
+
+/* Glassmorphism Classes */
+.glass {
+  background: rgba(255, 255, 255, 0.7) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }

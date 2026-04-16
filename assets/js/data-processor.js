@@ -174,16 +174,31 @@ function loadSampleData(){
 }
 
 function processFilesWithLoader() {
-  const btn = document.getElementById('btn-process');
-  const orgText = btn.innerText;
-  btn.innerText = "กำลังวิเคราะห์ข้อมูล...";
-  btn.disabled = true;
-  
-  setTimeout(() => {
-    processFiles();
-    btn.innerText = orgText;
-    btn.disabled = false;
-  }, 150);
+  Swal.fire({
+    title: 'กำลังประมวลผลข้อมูล...',
+    html: `
+      <div style="text-align:center;">
+        <lottie-player src="https://assets5.lottiefiles.com/packages/lf20_vnikbeve.json" 
+          background="transparent" speed="1" style="width: 200px; height: 200px; margin: 0 auto;" loop autoplay>
+        </lottie-player>
+        <p style="font-size:14px; color:var(--text-muted); margin-top:10px;">ระบบกำลังคำนวณกำไรสุทธิและวิเคราะห์ข้อมูล Ads ให้คุณ...</p>
+      </div>
+    `,
+    showConfirmButton: false,
+    allowOutsideClick: false,
+    timer: 2000,
+    timerProgressBar: true,
+    didOpen: () => {
+      Swal.showLoading();
+      setTimeout(() => {
+        processFiles();
+        Swal.close();
+      }, 1800);
+    },
+    customClass: {
+      popup: 'swal2-borderless'
+    }
+  });
 }
 
 function processFiles(skipTabSwitch = false){

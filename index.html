@@ -13,8 +13,17 @@
 <!-- Excel Library -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-<!-- Chart.js for Dashboard -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- ApexCharts for Modern Dashboard -->
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+<!-- Lottie Player -->
+<script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+
+<!-- Tippy.js (Popper is required) -->
+<script src="https://unpkg.com/@popperjs/core@2"></script>
+<script src="https://unpkg.com/tippy.js@6"></script>
+<link rel="stylesheet" href="https://unpkg.com/tippy.js@6/dist/tippy.css" />
+<link rel="stylesheet" href="https://unpkg.com/tippy.js@6/animations/shift-away.css" />
 
 <!-- SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -435,12 +444,12 @@
         <div class="card" style="position: relative; height: 380px;">
           <h3 style="margin-bottom: 4px;">1. Cost & Fee Breakdown</h3>
           <p class="sub" style="margin-bottom: 16px; font-size:12px;">สัดส่วนค่าใช้จ่าย: ต้นทุนสินค้าเทียบกับค่าธรรมเนียม</p>
-          <div style="height:270px"><canvas id="costBreakdownChart"></canvas></div>
+          <div style="height:270px" id="costBreakdownChart"></div>
         </div>
         <div class="card" style="position: relative; height: 380px;">
           <h3 style="margin-bottom: 4px;">2. Pricing Intelligence</h3>
           <p class="sub" style="margin-bottom: 16px; font-size:12px;">โครงสร้างกำไร: A (>30%), B (15-30%), C (<15%)</p>
-          <div style="height:270px"><canvas id="marginTierChart"></canvas></div>
+          <div style="height:270px" id="marginTierChart"></div>
         </div>
       </div>
 
@@ -448,9 +457,7 @@
       <div class="card" style="margin-bottom:16px;">
         <div class="card-title">3. Seasonality Trend</div>
         <p class="card-sub">แนวโน้มยอดขายและกำไร แยกตามวันที่ปิดออเดอร์</p>
-        <div style="height:350px;">
-          <canvas id="chart-timeseries"></canvas>
-        </div>
+        <div style="height:350px;" id="chart-timeseries"></div>
         
         <!-- Daily Table Section -->
         <div style="margin-top:20px; border-top: 1px solid var(--border-color); padding-top: 15px;">
@@ -480,18 +487,18 @@
           <b>Star</b> (เหลือง) ขายดีกำไรสูง ควรดันโฆษณาต่อ | <b>Cash Cow</b> (ฟ้า) ขายดีกำไรกลางๆ ช่วยหล่อเลี้ยงธุรกิจ<br/>
           <b>Question Mark</b> (ม่วง) กำไรต่อชิ้นสูงแต่ขายน้อย ลองทำโปรโมชั่น | <b>Dog</b> (เทา) กำไรน้อยขายไม่ออก ควรลดสต๊อก
         </p>
-        <div style="height: 380px; width: 100%;"><canvas id="bcgMatrixChart"></canvas></div>
+        <div style="height: 380px; width: 100%;" id="bcgMatrixChart"></div>
       </div>
 
       <!-- ROW 3: Top Sales & Top Profit -->
       <div class="grid2">
         <div class="card" style="position: relative; height: 380px;">
           <h3 style="margin-bottom: 16px;">Top 5 สินค้ากำไรสูงสุด (บาท)</h3>
-          <div style="height:300px"><canvas id="topProfitChart"></canvas></div>
+          <div style="height:300px" id="topProfitChart"></div>
         </div>
         <div class="card" style="position: relative; height: 380px;">
           <h3 style="margin-bottom: 16px;">10 อันดับสินค้าขายดี (จำนวนชิ้น)</h3>
-          <div style="height:300px"><canvas id="salesQtyChart"></canvas></div>
+          <div style="height:300px" id="salesQtyChart"></div>
         </div>
       </div>
 
