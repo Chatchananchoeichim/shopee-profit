@@ -138,8 +138,8 @@ function renderDashboard() {
     }
   });
 
-  // 2. Seasonality Chart (Time Series)
-  const ctxTime = document.getElementById('timeSeriesChart').getContext('2d');
+  // 3. Seasonality Chart (Time Series)
+  const ctxTime = document.getElementById('chart-timeseries').getContext('2d');
   state.charts.timeSeries = new Chart(ctxTime, {
     type: 'line',
     data: {
@@ -152,18 +152,57 @@ function renderDashboard() {
         },
         {
           type: 'line', label: 'กำไร (Profit)',
-          data: (state.timeSeries || []).map(d => d.profit),
-          borderColor: '#2b8a3e', backgroundColor: '#2b8a3e',
-          borderWidth: 3, tension: 0.3
+          data: state.timeSeries.map(d=>d.profit),
+          borderColor: '#2b8a3e',
+          backgroundColor: '#2b8a3e',
+          yAxisID: 'y1',
+          fill: false,
+          tension: 0.3
         }
       ]
     },
     options: {
-      responsive: true, maintainAspectRatio: false,
-      scales: { y: { beginAtZero: true } },
-      plugins: { legend: { position: 'top' } }
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { grid: { display: false } },
+        y: {
+          beginAtZero: true,
+          position: 'left',
+          title: { display: true, text: 'ยอดขาย (THB)' }
+        },
+        y1: {
+          beginAtZero: true,
+          position: 'right',
+          grid: { drawOnChartArea: false },
+          title: { display: true, text: 'กำไร (THB)' }
+        }
+      },
+      plugins: {
+        legend: { position: 'top' },
+        tooltip: {
+          mode: 'index',
+          intersect: false
+        }
+      }
     }
   });
+
+  // Populate Daily Table
+  const dailyBody = document.getElementById('daily-performance-body');
+  if (dailyBody) {
+    dailyBody.innerHTML = state.timeSeries.map(d => {
+      const margin = d.revenue > 0 ? (d.profit / d.revenue * 100).toFixed(1) : 0;
+      return `
+        <tr>
+          <td style="font-family:monospace">${d.date}</td>
+          <td class="text-right">฿${Math.round(d.revenue).toLocaleString()}</td>
+          <td class="text-right ${d.profit >= 0 ? 'green' : 'red'}">฿${Math.round(d.profit).toLocaleString()}</td>
+          <td class="text-right">${margin}%</td>
+        </tr>
+      `;
+    }).reverse().join(''); // Show latest first
+  }
 
   // 3. BCG Matrix
   const scatterColors = bcgData.map(d => {

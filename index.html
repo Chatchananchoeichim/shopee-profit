@@ -445,10 +445,32 @@
       </div>
 
       <!-- ROW 2: Seasonality Trend (Item 3) -->
-      <div class="card" style="margin-bottom: 16px;">
-        <h3 style="margin-bottom: 4px;">3. Seasonality Trend</h3>
-        <p class="sub" style="margin-bottom: 16px; font-size:12px;">แนวโน้มยอดขายและกำไร แยกตามวันที่มีออเดอร์</p>
-        <div style="height:320px"><canvas id="timeSeriesChart"></canvas></div>
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-title">3. Seasonality Trend</div>
+        <p class="card-sub">แนวโน้มยอดขายและกำไร แยกตามวันที่ปิดออเดอร์</p>
+        <div style="height:350px;">
+          <canvas id="chart-timeseries"></canvas>
+        </div>
+        
+        <!-- Daily Table Section -->
+        <div style="margin-top:20px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+            <p style="font-size:13px; font-weight:600; margin-bottom:10px;">📊 ตารางสรุปรายวัน (Daily Analytics)</p>
+            <div style="max-height: 250px; overflow-y: auto;">
+                <table class="report-table" style="font-size: 13px;">
+                    <thead>
+                        <tr>
+                            <th>วันที่</th>
+                            <th class="text-right">ยอดขาย (Revenue)</th>
+                            <th class="text-right">กำไร (Profit)</th>
+                            <th class="text-right">Margin (%)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="daily-performance-body">
+                        <!-- Data will be injected here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
       </div>
       
       <!-- ROW 2: BCG Matrix (Item 4) -->
