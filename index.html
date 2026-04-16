@@ -130,6 +130,7 @@
             <option value="100">100</option>
           </select> 
           รายการ/หน้า
+          <span id="cost-count" style="margin-left: 10px; font-weight: 600; color: var(--blue);"></span>
         </div>
         <div style="position:relative; width:450px;">
           <select id="cost-search" multiple="multiple" style="width: 100%;" data-placeholder="ค้นหาและเลือกสินค้า (เลือกได้หลายรายการ)..."></select>
@@ -244,6 +245,7 @@
               <option value="100" selected>100</option>
             </select> 
             รายการ/หน้า
+            <span id="result-count" style="margin-left: 10px; font-weight: 600; color: var(--blue);"></span>
           </div>
         <div style="position:relative;">
           <input type="text" id="result-search" placeholder="ค้นหา Order ID หรือชื่อสินค้า..." style="padding: 8px; width: 300px; border: 1px solid #ddd; border-radius: 4px; font-family: inherit; font-size: 14px; padding-right:32px;" onkeyup="filterResultTable()">
@@ -297,6 +299,7 @@
               <option value="100" selected>100</option>
             </select> 
             รายการ/หน้า
+            <span id="summary-count" style="margin-left: 10px; font-weight: 600; color: var(--blue);"></span>
           </div>
         <div style="position:relative;">
           <input type="text" id="summary-search" placeholder="ค้นหาด้วยชื่อสินค้า หรือ SKU..." style="padding: 8px; width: 300px; border: 1px solid #ddd; border-radius: 4px; font-family: inherit; font-size: 14px; padding-right:32px;" onkeyup="filterSummaryTable()">
@@ -396,6 +399,13 @@
 </div>
 
 <!-- External Javascript Logics -->
-<script src="assets/js/app.js"></script>
+<script src="assets/js/state.js"></script>
+<script src="assets/js/utils.js"></script>
+<script src="assets/js/firebase-setup.js"></script>
+<script src="assets/js/cost-module.js"></script>
+<script src="assets/js/data-processor.js"></script>
+<script src="assets/js/ui-module.js"></script>
+<script src="assets/js/dashboard.js"></script>
+<script src="assets/js/main.js"></script>
 </body>
 </html>
