@@ -932,7 +932,7 @@ td input {
   }
 }
 
-/* Overlay for mobile sidebar */
+/* OVERLAY FOR MOBILE SIDEBAR */
 .sidebar-overlay {
   display: none;
   position: fixed;
@@ -944,4 +944,112 @@ td input {
 
 .sidebar-overlay.active {
   display: block;
+}
+
+/* PREMIUM PAGINATION HEADER */
+.pagination-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface-hover);
+  padding: 6px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--text-muted);
+  width: fit-content;
+}
+
+.pagination-header select {
+  border: 1px solid var(--border) !important;
+  background: var(--surface) !important;
+  font-weight: 800;
+  color: var(--primary);
+  cursor: pointer;
+  padding: 4px 8px !important;
+  width: auto !important;
+  height: auto !important;
+  font-size: 13px !important;
+  border-radius: 6px !important;
+  box-shadow: var(--shadow-sm);
+}
+
+.pagination-header select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-light);
+}
+
+.pagination-header .total-badge {
+  margin-left: 4px;
+  font-weight: 700;
+  color: var(--primary);
+  background: var(--primary-light);
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+/* PREMIUM SEARCH BOX */
+.search-box {
+  position: relative;
+  width: 320px;
+}
+
+.search-box input {
+  padding: 10px 16px !important;
+  padding-right: 40px !important;
+  width: 100% !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+  font-family: inherit !important;
+  font-size: 14px !important;
+  background: var(--surface) !important;
+  transition: all 0.2s !important;
+  box-shadow: var(--shadow-sm) !important;
+  color: var(--text) !important;
+}
+
+.search-box input:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px var(--primary-light) !important;
+  outline: none !important;
+}
+
+.search-box .clear-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.5;
+  transition: all 0.2s;
+}
+
+.search-box .clear-btn:hover {
+  opacity: 1;
+  color: var(--red);
+}
+
+/* MOBILE RESPONSIVE UPDATES FOR CONTROLS */
+@media (max-width: 768px) {
+  .pagination-header {
+    width: 100% !important;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  
+  .search-box {
+    width: 100% !important;
+  }
+
+  .pagination-header select {
+    padding: 6px 12px !important;
+  }
 }

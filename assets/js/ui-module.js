@@ -94,9 +94,9 @@ function renderResultTable(){
   const resultCountEl = document.getElementById('result-count');
   if (resultCountEl) {
     if (totalOrders === totalAvailableOrders) {
-      resultCountEl.innerText = `(ทั้งหมด ${totalOrders.toLocaleString()} รายการ)`;
+      resultCountEl.innerText = `ทั้งหมด ${totalOrders.toLocaleString()} รายการ`;
     } else {
-      resultCountEl.innerText = `(พบ ${totalOrders.toLocaleString()} จาก ${totalAvailableOrders.toLocaleString()} รายการ)`;
+      resultCountEl.innerText = `พบ ${totalOrders.toLocaleString()} จาก ${totalAvailableOrders.toLocaleString()} รายการ`;
     }
   }
   const totalPages = Math.ceil(totalOrders / state.itemsPerPage) || 1;
@@ -348,9 +348,9 @@ function renderSummaryTable(){
   const summaryCountEl = document.getElementById('summary-count');
   if (summaryCountEl) {
     if (totalItems === totalAvailableItems) {
-      summaryCountEl.innerText = `(ทั้งหมด ${totalItems.toLocaleString()} รายการ)`;
+      summaryCountEl.innerText = `ทั้งหมด ${totalItems.toLocaleString()} รายการ`;
     } else {
-      summaryCountEl.innerText = `(พบ ${totalItems.toLocaleString()} จาก ${totalAvailableItems.toLocaleString()} รายการ)`;
+      summaryCountEl.innerText = `พบ ${totalItems.toLocaleString()} จาก ${totalAvailableItems.toLocaleString()} รายการ`;
     }
   }
   const totalPages = Math.ceil(totalItems / state.summaryItemsPerPage) || 1;
@@ -676,9 +676,9 @@ function renderAdsTable() {
   const countEl = document.getElementById('ads-count');
   if (countEl) {
     if (totalItems === totalAvailableItems) {
-      countEl.innerText = `(ทั้งหมด ${totalItems.toLocaleString()} รายการ)`;
+      countEl.innerText = `ทั้งหมด ${totalItems.toLocaleString()} รายการ`;
     } else {
-      countEl.innerText = `(พบ ${totalItems.toLocaleString()} จากทั้งหมด ${totalAvailableItems.toLocaleString()} รายการ)`;
+      countEl.innerText = `พบ ${totalItems.toLocaleString()} จากทั้งหมด ${totalAvailableItems.toLocaleString()} รายการ`;
     }
   }
 

@@ -130,9 +130,9 @@ function renderCostTable(){
   const costCountEl = document.getElementById('cost-count');
   if (costCountEl) {
     if (totalItems === totalAvailableItems) {
-      costCountEl.innerText = `(ทั้งหมด ${totalItems.toLocaleString()} รายการ)`;
+      costCountEl.innerText = `ทั้งหมด ${totalItems.toLocaleString()} รายการ`;
     } else {
-      costCountEl.innerText = `(พบ ${totalItems.toLocaleString()} จาก ${totalAvailableItems.toLocaleString()} รายการ)`;
+      costCountEl.innerText = `พบ ${totalItems.toLocaleString()} จาก ${totalAvailableItems.toLocaleString()} รายการ`;
     }
   }
   const totalPages = Math.ceil(totalItems / state.costItemsPerPage) || 1;
