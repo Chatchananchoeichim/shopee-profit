@@ -28,7 +28,8 @@ let state = {
     cost:    { col: null, dir: 'asc' },
     result:  { col: null, dir: 'asc' },
     summary: { col: null, dir: 'asc' },
-    ads:     { col: null, dir: 'asc' }
+    ads:     { col: null, dir: 'asc' },
+    payment: { col: 'revenue', dir: 'desc' }
   },
   incomeOverrides: JSON.parse(localStorage.getItem('shopee_income_overrides') || '{}'),
   theme: localStorage.getItem('torque_theme') || 'light',
@@ -62,4 +63,5 @@ function sortTable(table, col) {
   if (table === 'result')  { state.currentPage = 1; renderResultTable(); }
   if (table === 'summary') { state.summaryCurrentPage = 1; renderSummaryTable(); }
   if (table === 'ads')     { state.adsCurrentPage = 1; renderAdsTable(); }
+  if (table === 'payment') { renderDashboard(); }
 }

@@ -71,6 +71,39 @@ function renderDashboard() {
     statsSection.style.display = 'none';
   }
 
+  // --- Payment Channel Insights ---
+  const paymentTbody = document.getElementById('d-payment-tbody');
+  if (paymentTbody && state.paymentStats && state.paymentStats.length > 0) {
+    paymentTbody.innerHTML = '';
+    
+    // Sort logic
+    const ps = state.sort.payment;
+    let data = [...state.paymentStats];
+    if (ps.col) {
+      const dir = ps.dir === 'asc' ? 1 : -1;
+      data.sort((a, b) => {
+        let va = a[ps.col], vb = b[ps.col];
+        if (typeof va === 'string') return va.localeCompare(vb, 'th') * dir;
+        return (va - vb) * dir;
+      });
+    }
+
+    data.forEach(p => {
+      const tr = document.createElement('tr');
+      tr.style.cursor = 'pointer';
+      tr.innerHTML = `
+        <td style="font-weight:600; color:var(--text)">${p.channel}</td>
+        <td style="text-align:center;">${p.count.toLocaleString()}</td>
+        <td style="text-align:right; font-weight:500;">฿${Math.round(p.revenue).toLocaleString()}</td>
+        <td style="text-align:right; color:var(--red); font-weight:600;">${p.feePct.toFixed(2)}%</td>
+        <td style="text-align:center; color:var(--text-muted); font-family:monospace;">${p.installments}</td>
+      `;
+      paymentTbody.appendChild(tr);
+    });
+  } else if (paymentTbody) {
+    paymentTbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:24px; color:var(--text-faint)">ไม่มีข้อมูลการชำระเงิน</td></tr>';
+  }
+
   // 1. Cost & Fee Breakdown
   let sumComm = 0, sumServ = 0, sumTrans = 0;
   state.results.forEach(r => { if (r.isFirst && !r.isCancelled) { sumComm += Math.abs(r.commFee); sumServ += Math.abs(r.servFee); sumTrans += Math.abs(r.transFee); } });

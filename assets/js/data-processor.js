@@ -225,6 +225,7 @@ function processFiles(skipTabSwitch = false){
     const dateKey = findKey('วันที่ทำการสั่งซื้อ', 'เวลาที่สั่งซื้อ', 'วันที่สั่งซื้อ', 'เวลาชำระเงิน', 'เวลาการชำระเงิน', 'วันเวลา', 'Order Creation', 'เวลาเริ่มต้น');
     const payChannelKey = findKey('ช่องทางการชำระเงิน');
     const feePctKey = findKey('ค่าธรรมเนียม (%)');
+    const installmentKey = findKey('งวด', 'ผ่อน', 'Installment');
     const orderCommKey  = findKey('ค่าคอมมิชชั่น');
     const orderTransKey = findKey('Transaction Fee', 'ค่าธุรกรรม');
     const orderServKey  = findKey('ค่าบริการ');
@@ -276,6 +277,7 @@ function processFiles(skipTabSwitch = false){
            income: state.incomeOverrides[orderId] !== undefined ? state.incomeOverrides[orderId] : (inc.amount || ordIncome || 0),
            paymentChannel: inc.payment || String(row[payChannelKey]||''),
            feePct: inc.feePct || String(row[feePctKey]||''),
+           installments: row[installmentKey] || '-',
            commFee: isCancelledRow ? 0 : (inc.commFee || ordComm),
            commAMSFee: isCancelledRow ? 0 : (inc.commAMSFee || 0),
            servFee: isCancelledRow ? 0 : (inc.servFee || ordServ),
@@ -413,6 +415,39 @@ function processFiles(skipTabSwitch = false){
 
     state.results = results;
     state.summary = Object.values(skuSummaryMap).sort((a,b) => b.qty - a.qty);
+
+    // Aggregate Payment Channel Stats
+    const paymentMap = {};
+    allOrdersValue.forEach(o => {
+      if (o.isCancelled) return;
+      let channel = o.paymentChannel || 'ไม่ระบุ';
+      
+      // Breakdown SPayLater by installment detail since fees vary
+      if (channel.includes('SPayLater') && o.installments && o.installments !== '-' && o.installments !== '0') {
+        channel = `SPayLater (${o.installments})`;
+      }
+
+      if (!paymentMap[channel]) {
+        paymentMap[channel] = { count: 0, revenue: 0, fees: 0, installments: new Set() };
+      }
+      paymentMap[channel].count++;
+      paymentMap[channel].revenue += (o.sellingPriceTotal || 0);
+      paymentMap[channel].fees += (Math.abs(o.commFee||0) + Math.abs(o.servFee||0) + Math.abs(o.transFee||0));
+      if (o.installments && o.installments !== '-' && o.installments !== '0') {
+        paymentMap[channel].installments.add(o.installments);
+      }
+    });
+    state.paymentStats = Object.keys(paymentMap).map(k => {
+      const rev = paymentMap[k].revenue || 0;
+      const feePct = rev > 0 ? (paymentMap[k].fees / rev) * 100 : 0;
+      return {
+        channel: k,
+        ...paymentMap[k],
+        feePct: feePct,
+        installments: Array.from(paymentMap[k].installments).sort((a,b)=>parseInt(a)-parseInt(b)).join(', ') || '-'
+      };
+    }).sort((a, b) => b.revenue - a.revenue);
+
     if (state.shopStats && state.shopStats.length > 0) {
       state.shopStats.forEach(ss => {
         if (!timeSeriesMap[ss.date]) {

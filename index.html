@@ -599,6 +599,35 @@
         <div class="metric"><div class="label">สินค้าขาดทุน (SKUs)</div><div class="value red" id="d-loss-skus">-</div></div>
       </div>
 
+      <!-- NEW Payment Insights Section -->
+      <div class="card" style="margin-bottom:24px">
+        <div class="flex-between" style="margin-bottom:16px">
+          <div>
+            <h3 style="margin:0; font-size:16px; color:var(--text); display:flex; align-items:center; gap:8px;">
+              <span class="material-symbols-rounded" style="color:var(--primary)">payments</span>
+              ข้อมูลเชิงลึกช่องทางการชำระเงิน (Payment Method Insights)
+            </h3>
+            <p style="margin:4px 0 0 0; font-size:12px; color:var(--text-muted)">วิเคราะห์สัดส่วนยอดขาย ค่าธรรมเนียม และการผ่อนชำระแยกตามช่องทาง</p>
+          </div>
+        </div>
+        <div class="scroll-x">
+          <table style="width:100%; border-collapse:collapse;">
+            <thead>
+              <tr style="border-bottom:1px solid var(--border)">
+                <th class="sortable" onclick="sortTable('payment','channel')" id="payment-th-channel" style="text-align:left; padding:12px 8px; font-size:13px; color:var(--text-muted)">ช่องทางการชำระเงิน <span class="sort-icon">⇅</span></th>
+                <th class="sortable" onclick="sortTable('payment','count')" id="payment-th-count" style="text-align:center; padding:12px 8px; font-size:13px; color:var(--text-muted)">จำนวน (ออเดอร์) <span class="sort-icon">⇅</span></th>
+                <th class="sortable" onclick="sortTable('payment','revenue')" id="payment-th-revenue" style="text-align:right; padding:12px 8px; font-size:13px; color:var(--text-muted)">ยอดขายรวม (Gross) <span class="sort-icon">⇅</span></th>
+                <th class="sortable" onclick="sortTable('payment','feePct')" id="payment-th-feePct" style="text-align:right; padding:12px 8px; font-size:13px; color:var(--text-muted)">เฉลี่ย % ค่าธรรมเนียม <span class="sort-icon">⇅</span></th>
+                <th class="sortable" onclick="sortTable('payment','installments')" id="payment-th-installments" style="text-align:center; padding:12px 8px; font-size:13px; color:var(--text-muted)">จำนวนงวดที่ผ่อน <span class="sort-icon">⇅</span></th>
+              </tr>
+            </thead>
+            <tbody id="d-payment-tbody">
+              <tr><td colspan="5" style="text-align:center; padding:24px; color:var(--text-faint)">รอการคำนวณข้อมูล...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <div id="ads-summary-dashboard" class="grid2" style="margin-bottom:16px; display:none;">
         <div class="card metric" style="background:var(--red-light); border-color:var(--red); padding: 20px;">
           <p class="label" style="color:var(--red); font-size: 13px; font-weight: 700;">รวมค่าโฆษณา Shopee Ads (฿)</p>

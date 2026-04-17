@@ -358,7 +358,7 @@ th {
   border-bottom: 1px solid var(--border);
 }
 
-td { padding: 16px 14px; border-bottom: 1px solid var(--border); font-size: 13px; }
+td { padding: 16px 14px; border-bottom: 1px solid var(--border); font-size: 13px; transition: background 0.2s ease; }
 tr:last-child td { border-bottom: none; }
 tr:hover td { background: var(--surface-hover) !important; }
 
