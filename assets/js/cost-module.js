@@ -292,6 +292,13 @@ function saveCost(id){
     row.variant = v;
     row.cost = c;
     saveCostsToLocal();
+    Swal.fire({
+      icon: 'success',
+      title: 'บันทึกสำเร็จ',
+      text: 'แก้ไขข้อมูลต้นทุนเรียบร้อยแล้วครับ',
+      timer: 1500,
+      showConfirmButton: false
+    });
   }
   state.editingId = null;
   renderCostTable();
@@ -318,6 +325,13 @@ function duplicateCost(id){
         saveCostsToLocal();
         renderCostTable();
         processFiles(true); // Sync results
+        Swal.fire({
+          icon: 'success',
+          title: 'คัดลอกสำเร็จ',
+          text: 'สร้างข้อมูลชุดใหม่จากการคัดลอกเรียบร้อยครับ',
+          timer: 1500,
+          showConfirmButton: false
+        });
       }
     });
   }

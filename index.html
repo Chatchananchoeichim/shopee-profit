@@ -69,33 +69,38 @@
         <span class="logo-icon">T</span>
         <span class="logo-text">TORQUE</span>
       </div>
-      <button class="theme-toggle" onclick="toggleTheme()" title="สลับโหมด มืด/สว่าง">
-        <span class="material-symbols-rounded">dark_mode</span>
-      </button>
+      <div style="display:flex; gap: 8px;">
+        <button class="theme-toggle" onclick="toggleTheme()" title="สลับโหมด มืด/สว่าง">
+          <span class="material-symbols-rounded">dark_mode</span>
+        </button>
+        <button class="theme-toggle sidebar-toggle" onclick="toggleSidebar()" title="หุบ/ขยาย แถบข้าง">
+          <span class="material-symbols-rounded">menu_open</span>
+        </button>
+      </div>
     </div>
 
     <nav class="sidebar-nav">
-      <button class="nav-item active" onclick="switchTab('import')">
+      <button class="nav-item active" onclick="switchTab('import')" title="นำเข้าไฟล์">
         <span class="material-symbols-rounded">upload_file</span>
         <span>นำเข้าไฟล์</span>
       </button>
-      <button class="nav-item" onclick="switchTab('cost')">
+      <button class="nav-item" onclick="switchTab('cost')" title="จัดการต้นทุน">
         <span class="material-symbols-rounded">inventory_2</span>
         <span>จัดการต้นทุน</span>
       </button>
-      <button class="nav-item" onclick="switchTab('result')">
+      <button class="nav-item" onclick="switchTab('result')" title="ผลลัพธ์รายออเดอร์">
         <span class="material-symbols-rounded">receipt_long</span>
         <span>ผลลัพธ์รายออเดอร์</span>
       </button>
-      <button class="nav-item" onclick="switchTab('summary')">
+      <button class="nav-item" onclick="switchTab('summary')" title="สรุปรายสินค้า">
         <span class="material-symbols-rounded">analytics</span>
         <span>สรุปรายสินค้า</span>
       </button>
-      <button class="nav-item" onclick="switchTab('ads')">
+      <button class="nav-item" onclick="switchTab('ads')" title="วิเคราะห์โฆษณา">
         <span class="material-symbols-rounded">ads_click</span>
         <span>วิเคราะห์โฆษณา</span>
       </button>
-      <button class="nav-item" onclick="switchTab('dashboard')">
+      <button class="nav-item" onclick="switchTab('dashboard')" title="Dashboard Insights">
         <span class="material-symbols-rounded">dashboard</span>
         <span>Dashboard Insights</span>
       </button>
@@ -114,9 +119,14 @@
 
   <main class="main-content">
     <div class="top-bar">
-      <div class="page-info">
-        <h1 id="current-page-title">นำเข้าไฟล์</h1>
-        <p id="current-page-sub">อัพโหลดไฟล์จาก Shopee และเตรียมการคำนวณ</p>
+      <div class="page-info" style="display:flex; align-items:center; gap:20px;">
+        <div class="page-icon-box" style="width:52px; height:52px; background:var(--primary-light); color:var(--primary); border-radius:14px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+          <span class="material-symbols-rounded" id="current-page-icon" style="font-size:32px;">upload_file</span>
+        </div>
+        <div>
+          <h1 id="current-page-title" style="margin:0; font-size:24px;">นำเข้าไฟล์</h1>
+          <p id="current-page-sub" style="margin:0; opacity:0.7;">อัพโหลดไฟล์จาก Shopee และเตรียมการคำนวณ</p>
+        </div>
       </div>
       <div class="top-bar-actions">
         <button class="btn btn-pdf" id="btn-export-pdf" style="display:none;" onclick="exportProPDF()">
@@ -236,10 +246,10 @@
       </div>
       <div id="cost-pagination" class="pagination" style="margin-top: 12px; margin-bottom: 16px;"></div>
       <div class="row-add">
-        <input type="text" id="new-sku" placeholder="รหัส SKU" style="flex:1">
-        <input type="text" id="new-product" placeholder="ชื่อสินค้า (บางส่วน)" style="flex:2">
-        <input type="text" id="new-variant" placeholder="ชื่อตัวเลือก Variant" style="flex:2">
-        <input type="number" id="new-cost" placeholder="ต้นทุน" style="flex:1;max-width:110px">
+        <input type="text" id="new-sku" placeholder="รหัส SKU" style="flex: 1;">
+        <input type="text" id="new-product" placeholder="ชื่อสินค้า (เช่น หมวกกันน็อค...)" style="flex: 2;">
+        <input type="text" id="new-variant" placeholder="ตัวเลือก Variant (เช่น สี, ไซส์)" style="flex: 2;">
+        <input type="number" id="new-cost" placeholder="ต้นทุน (฿)" style="flex: 1;">
         <button class="btn primary" onclick="addCostRow()">+ เพิ่มข้อมูล</button>
       </div>
     </div>
@@ -255,9 +265,12 @@
   <div id="tab-result" class="tab-content">
     <div id="result-empty" class="alert info">กด "คำนวณเลย" ในแท็บแรกก่อน เพื่อดูผลลัพธ์การคำนวณ</div>
     <div id="result-content" style="display:none">
-      <div class="metrics-grid" style="margin-bottom:16px">
-        <div class="metric clickable" onclick="filterByQuickStats('all', this)">
-          <div class="label">ออเดอร์ (ทั้งหมด)</div>
+      <div class="metrics-grid" style="margin-bottom:24px">
+        <div class="metric clickable" onclick="filterByQuickStats('all', this)" style="border-left: 4px solid var(--primary);">
+          <div class="metric-header">
+            <div class="label">ออเดอร์ (ทั้งหมด)</div>
+            <div class="metric-icon" style="color:var(--primary); background:var(--primary-light);"><span class="material-symbols-rounded">shopping_bag</span></div>
+          </div>
           <div class="value-row">
             <div class="value" id="r-total-orders">-</div>
             <div class="sparkline" id="spark-total-orders"></div>
@@ -266,41 +279,67 @@
             <div class="sub-item" onclick="event.stopPropagation(); filterByQuickStats('success', this.closest('.metric'))">
               <span class="dot success"></span> สำเร็จ: <span id="r-sub-success">0</span> 
             </div>
+            <div class="sub-item" onclick="event.stopPropagation(); filterByQuickStats('shipping', this.closest('.metric'))">
+              <span class="dot blue" style="background:var(--blue)"></span> การจัดส่ง: <span id="r-sub-shipping">0</span> 
+            </div>
+            <div class="sub-item" onclick="event.stopPropagation(); filterByQuickStats('toship', this.closest('.metric'))">
+              <span class="dot amber" style="background:var(--amber)"></span> ที่ต้องจัดส่ง: <span id="r-sub-toship">0</span> 
+            </div>
             <div class="sub-item" onclick="event.stopPropagation(); filterByQuickStats('cancelled', this.closest('.metric'))">
               <span class="dot danger"></span> ยกเลิก: <span id="r-sub-cancelled">0</span>
             </div>
           </div>
         </div>
-        <div class="metric">
-          <div class="label">ยอดขายรวม (฿)</div>
+
+        <div class="metric" style="border-left: 4px solid var(--amber);">
+          <div class="metric-header">
+            <div class="label">ยอดขายรวม (฿)</div>
+            <div class="metric-icon" style="color:var(--amber); background:var(--amber-light);"><span class="material-symbols-rounded">payments</span></div>
+          </div>
           <div class="value-row">
             <div class="value amber" id="r-gross-sales">-</div>
             <div class="sparkline" id="spark-revenue"></div>
           </div>
         </div>
-        <div class="metric clickable" onclick="filterByQuickStats('success', this)">
-          <div class="label">ออเดอร์สำเร็จ</div>
+
+        <div class="metric clickable" onclick="filterByQuickStats('success', this)" style="border-left: 4px solid var(--blue);">
+          <div class="metric-header">
+            <div class="label">ออเดอร์สำเร็จ</div>
+            <div class="metric-icon" style="color:var(--blue); background:var(--blue-light);"><span class="material-symbols-rounded">verified</span></div>
+          </div>
           <div class="value-row">
             <div class="value blue" id="r-orders">-</div>
             <div class="sparkline" id="spark-orders-success"></div>
           </div>
         </div>
-        <div class="metric">
-          <div class="label">รายรับโอนแล้ว (฿)</div>
+
+        <div class="metric" style="border-left: 4px solid var(--blue);">
+          <div class="metric-header">
+            <div class="label">รายรับโอนแล้ว (฿)</div>
+            <div class="metric-icon" style="color:var(--blue); background:var(--blue-light);"><span class="material-symbols-rounded">account_balance_wallet</span></div>
+          </div>
           <div class="value-row">
             <div class="value" id="r-income">-</div>
             <div class="sparkline" id="spark-income"></div>
           </div>
         </div>
-        <div class="metric">
-          <div class="label">ต้นทุนรวม (฿)</div>
+
+        <div class="metric" style="border-left: 4px solid var(--red);">
+          <div class="metric-header">
+            <div class="label">ต้นทุนรวม (฿)</div>
+            <div class="metric-icon" style="color:var(--red); background:var(--red-light);"><span class="material-symbols-rounded">inventory_2</span></div>
+          </div>
           <div class="value-row">
             <div class="value red" id="r-cost">-</div>
             <div class="sparkline" id="spark-cost"></div>
           </div>
         </div>
-        <div class="metric">
-          <div class="label">กำไรสุทธิ Net (฿)</div>
+
+        <div class="metric" style="border-left: 4px solid var(--green);">
+          <div class="metric-header">
+            <div class="label">กำไรสุทธิ Net (฿)</div>
+            <div class="metric-icon" style="color:var(--green); background:var(--green-light);"><span class="material-symbols-rounded">savings</span></div>
+          </div>
           <div class="value-row">
             <div class="value green" id="r-net">-</div>
             <div class="sparkline" id="spark-profit"></div>
@@ -369,6 +408,7 @@
             <thead>
               <tr>
                 <th class="sortable" onclick="sortTable('result','orderId')" id="result-th-orderId">Order ID <span class="sort-icon">⇅</span></th>
+                <th style="text-align:center; min-width:80px;">สถานะ</th>
                 <th>ช่องทางชำระ</th>
                 <th class="sortable" onclick="sortTable('result','feePct')" id="result-th-feePct">% หัก <span class="sort-icon">⇅</span></th>
                 <th class="sortable" onclick="sortTable('result','product')" id="result-th-product">สินค้า / SKU <span class="sort-icon">⇅</span></th>
@@ -379,7 +419,6 @@
                 <th class="sortable" onclick="sortTable('result','income')" id="result-th-income" style="text-align:right">Income โอน <span class="sort-icon">⇅</span></th>
                 <th style="text-align:right">ต้นทุนรวม(ชิ้นนี้)</th>
                 <th class="sortable" onclick="sortTable('result','net')" id="result-th-net" style="text-align:right">Net กำไร(ออเดอร์) <span class="sort-icon">⇅</span></th>
-                <th style="text-align:center; min-width:100px;">สถานะ</th>
               </tr>
             </thead>
             <tbody id="result-tbody"></tbody>
@@ -424,7 +463,8 @@
             <thead>
               <tr>
                 <th class="sortable" onclick="sortTable('summary','sku')" id="summary-th-sku">SKU <span class="sort-icon">⇅</span></th>
-                <th class="sortable" onclick="sortTable('summary','title')" id="summary-th-title">ชื่อสินค้า / ตัวเลือก <span class="sort-icon">⇅</span></th>
+                <th class="sortable" onclick="sortTable('summary','product')" id="summary-th-product">ชื่อสินค้า <span class="sort-icon">⇅</span></th>
+                <th class="sortable" onclick="sortTable('summary','title')" id="summary-th-title">ตัวเลือก <span class="sort-icon">⇅</span></th>
                 <th class="sortable" onclick="sortTable('summary','qty')" id="summary-th-qty" style="text-align:right">ขายได้(ชิ้น) <span class="sort-icon">⇅</span></th>
                 <th class="sortable" onclick="sortTable('summary','revenue')" id="summary-th-revenue" style="text-align:right">ยอดรับจริงรวม <span class="sort-icon">⇅</span></th>
                 <th class="sortable" onclick="sortTable('summary','cost')" id="summary-th-cost" style="text-align:right">ต้นทุนรวม <span class="sort-icon">⇅</span></th>

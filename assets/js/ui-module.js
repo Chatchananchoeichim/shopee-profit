@@ -40,7 +40,10 @@ function renderResultTable(){
   
   let data = state.results;
   if(state.filterMode==='no-cost') data = data.filter(r => r.missingCost && !r.isCancelled);
-  if(state.filterMode==='success') data = data.filter(r => !r.isCancelled && !r.missingCost);
+  else if(state.filterMode==='success') data = data.filter(r => !r.isCancelled && !r.missingCost);
+  else if(state.filterMode==='cancelled') data = data.filter(r => r.isCancelled);
+  else if(state.filterMode==='shipping') data = data.filter(r => r.status.includes('การจัดส่ง'));
+  else if(state.filterMode==='toship') data = data.filter(r => r.status.includes('ที่ต้องจัดส่ง'));
 
   if(state.resultSearchQuery) {
     const q = state.resultSearchQuery.toLowerCase();
@@ -123,7 +126,7 @@ function renderResultTable(){
     const netStr = r.net!==null ? '฿'+Math.round(r.net).toLocaleString() : '—';
     const netStyle = r.net!==null ? (r.net>=0?'color:var(--green);font-weight:700':'color:var(--red);font-weight:700') : 'color:var(--text-muted)';
     const badge = r.isCancelled 
-      ? '<span class="badge gray">ยกเลิก</span>' 
+      ? '<span class="badge red">ยกเลิก</span>' 
       : r.missingCost 
         ? '<span class="badge red">ขาด cost</span>' 
         : '<span class="badge green">OK</span>';
@@ -168,6 +171,7 @@ function renderResultTable(){
       html += `<td rowspan="${r.rowSpan}" style="padding:10px 12px;vertical-align:middle;" class="border-right">
         <div style="font-family:monospace;font-size:11px;color:var(--text-muted);letter-spacing:0.5px;">${r.orderId}</div>
       </td>`;
+      html += `<td rowspan="${r.rowSpan}" style="padding:8px;vertical-align:middle;text-align:center;">${badge}</td>`;
       html += `<td rowspan="${r.rowSpan}" style="padding:8px 10px;vertical-align:middle;text-align:center;">${payBadge}</td>`;
       html += `<td rowspan="${r.rowSpan}" style="padding:8px 10px;vertical-align:middle;text-align:center;">
         <div style="font-size:13px;font-weight:700;color:var(--red);">${totalPct > 0 ? totalPct.toFixed(2)+'%' : (r.feePct || '-')}</div>
@@ -178,11 +182,11 @@ function renderResultTable(){
     // Product + SKU cell
     const skuChip = r.sku ? `<span style="display:inline-block;margin-top:2px;font-size:9px;font-weight:700;padding:1px 6px;background:#eff6ff;color:#1d4ed8;border-radius:4px;letter-spacing:0.5px;">${r.sku}</span>` : '';
     html += `
-        <td style="padding:10px 12px;vertical-align:middle;">
-          <div style="font-size:12px;font-weight:500;color:var(--text);max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.product}">${r.product}</div>
+        <td style="padding:6px 8px;vertical-align:middle;">
+          <div style="font-size:11px;font-weight:500;color:var(--text);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.product}">${r.product}</div>
           ${skuChip}
         </td>
-        <td style="padding:8px 10px;vertical-align:middle;font-size:12px;color:var(--text-muted);max-width:120px;">${r.variant}</td>
+        <td style="padding:6px 8px;vertical-align:middle;font-size:11px;color:var(--text-muted);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.variant}">${r.variant}</td>
         <td style="padding:8px;vertical-align:middle;text-align:center;">
           <span style="display:inline-block;font-size:13px;font-weight:700;min-width:24px;">${r.qty}</span>
         </td>
@@ -254,7 +258,6 @@ function renderResultTable(){
     if(r.isFirst){
       html += `
         <td rowspan="${r.rowSpan}" style="padding:10px 12px;vertical-align:middle;text-align:right;font-size:14px;${netStyle}" class="border-right">${netStr}</td>
-        <td rowspan="${r.rowSpan}" style="padding:8px;vertical-align:middle;text-align:center;">${badge}</td>
       `;
     }
 
@@ -315,7 +318,8 @@ function renderSummaryTable(){
     const q = state.summarySearchQuery.toLowerCase();
     data = data.filter(r => 
       (r.sku && r.sku.toLowerCase().includes(q)) ||
-      (r.title && r.title.toLowerCase().includes(q))
+      (r.product && r.product.toLowerCase().includes(q)) ||
+      (r.variant && r.variant.toLowerCase().includes(q))
     );
   }
 
@@ -325,6 +329,7 @@ function renderSummaryTable(){
     const dir = ss.dir === 'asc' ? 1 : -1;
     data = [...data].sort((a, b) => {
       if (ss.col === 'sku') return ((a.sku||'').localeCompare(b.sku||'', 'th')) * dir;
+      if (ss.col === 'product') return ((a.product||'').localeCompare(b.product||'', 'th')) * dir;
       if (ss.col === 'title') return ((a.title||'').localeCompare(b.title||'', 'th')) * dir;
       if (ss.col === 'qty') return (a.qty - b.qty) * dir;
       if (ss.col === 'revenue') return (a.revenue - b.revenue) * dir;
@@ -370,7 +375,8 @@ function renderSummaryTable(){
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td style="font-size:12px;color:var(--blue);font-family:monospace;font-weight:600">${r.sku || '-'}</td>
-      <td style="font-size:13px">${r.title}</td>
+      <td style="font-size:13px;font-weight:500;">${r.product}</td>
+      <td style="font-size:12px;color:var(--text-muted);">${r.variant || '-'}</td>
       <td style="text-align:right;font-weight:600">${r.qty}</td>
       <td style="text-align:right">฿${Math.round(r.revenue).toLocaleString()}</td>
       <td style="text-align:right">฿${Math.round(r.cost).toLocaleString()}</td>
@@ -437,17 +443,19 @@ function switchTab(name){
 
   // Page Info Update
   const titles = {
-    'import': { t: 'นำเข้าไฟล์', s: 'อัพโหลดไฟล์จาก Shopee และเตรียมการคำนวณ' },
-    'cost': { t: 'จัดการต้นทุน', s: 'เพิ่มและแก้ไขต้นทุนสินค้าเพื่อคำนวณกำไร' },
-    'result': { t: 'ผลลัพธ์รายออเดอร์', s: 'ตรวจสอบรายละเอียดกำไรรายออเดอร์ที่คำนวณแล้ว' },
-    'summary': { t: 'สรุปรายสินค้า', s: 'วิเคราะห์ภาพรวมกำไรและยอดขายแยกตาม SKU' },
-    'ads': { t: 'วิเคราะห์โฆษณา', s: 'เจาะลึกประสิทธิภาพ Shopee Ads และความคุ้มค่า' },
-    'dashboard': { t: 'Dashboard Insights', s: 'ข้อมูลเชิงกลยุทธ์ผ่าน BCG Matrix และ Pricing Intelligence' }
+    'import': { t: 'นำเข้าไฟล์', s: 'อัพโหลดไฟล์จาก Shopee และเตรียมการคำนวณ', i: 'upload_file' },
+    'cost': { t: 'จัดการต้นทุน', s: 'เพิ่มและแก้ไขต้นทุนสินค้าเพื่อคำนวณกำไร', i: 'inventory_2' },
+    'result': { t: 'ผลลัพธ์รายออเดอร์', s: 'ตรวจสอบรายละเอียดกำไรรายออเดอร์ที่คำนวณแล้ว', i: 'receipt_long' },
+    'summary': { t: 'สรุปรายสินค้า', s: 'วิเคราะห์ภาพรวมกำไรและยอดขายแยกตาม SKU', i: 'analytics' },
+    'ads': { t: 'วิเคราะห์โฆษณา', s: 'เจาะลึกประสิทธิภาพ Shopee Ads และความคุ้มค่า', i: 'ads_click' },
+    'dashboard': { t: 'Dashboard Insights', s: 'ข้อมูลเชิงกลยุทธ์ผ่าน BCG Matrix และ Pricing Intelligence', i: 'dashboard' }
   };
   
-  const info = titles[name] || { t: name, s: '' };
+  const info = titles[name] || { t: name, s: '', i: 'star' };
   document.getElementById('current-page-title').innerText = info.t;
   document.getElementById('current-page-sub').innerText = info.s;
+  const iconEl = document.getElementById('current-page-icon');
+  if (iconEl) iconEl.innerText = info.i;
 
   // Show/Hide PDF button in Results or Dashboard or Summary
   const pdfBtn = document.getElementById('btn-export-pdf');
@@ -456,6 +464,31 @@ function switchTab(name){
   } else {
     pdfBtn.style.display = 'none';
   }
+}
+
+function toggleSidebar() {
+  const sidebar = document.querySelector('.sidebar');
+  const icon = document.querySelector('.sidebar-toggle .material-symbols-rounded');
+  if (!sidebar) return;
+  
+  sidebar.classList.toggle('collapsed');
+  
+  if (sidebar.classList.contains('collapsed')) {
+    icon.innerText = 'side_navigation';
+  } else {
+    icon.innerText = 'menu_open';
+  }
+  
+  // Refresh charts after transition to ensure they fit the new container width
+  setTimeout(() => {
+    if (state.charts) {
+      Object.values(state.charts).forEach(chart => {
+        if (chart && typeof chart.updateOptions === 'function') {
+          chart.render();
+        }
+      });
+    }
+  }, 350);
 }
 
 function toggleTheme() {
@@ -495,14 +528,14 @@ function filterByQuickStats(type, el) {
     state.filterMode = 'success';
     searchInput.value = '';
   } else if (type === 'cancelled') {
-    state.filterMode = 'all';
-    searchInput.value = 'ยกเลิก';
-  } else if (type === 'other') {
-    state.filterMode = 'all';
-    // Searching for status keywords that are NOT success/cancelled
-    // Since we don't have a negative search, we'll try 'จัดส่ง' or 'รอ' 
-    // Usually covers 'ที่ต้องจัดส่ง', 'กำลังจัดส่ง'
-    searchInput.value = 'จัดส่ง'; 
+    state.filterMode = 'cancelled';
+    searchInput.value = '';
+  } else if (type === 'shipping') {
+    state.filterMode = 'shipping';
+    searchInput.value = '';
+  } else if (type === 'toship') {
+    state.filterMode = 'toship';
+    searchInput.value = '';
   }
   
   state.currentPage = 1;
