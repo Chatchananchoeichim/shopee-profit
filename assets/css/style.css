@@ -250,9 +250,11 @@ body {
   flex-grow: 1;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  height: 100vh;
+  overflow-y: auto !important;
   padding: 0;
   background: var(--bg);
+  position: relative;
 }
 
 .top-bar {

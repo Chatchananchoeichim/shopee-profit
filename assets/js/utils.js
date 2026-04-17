@@ -31,8 +31,8 @@ function showErrorMessage(title, details) {
         ${details}
       </div>
     `,
-    confirmButtonText: 'รับทราบ',
-    confirmButtonColor: '#f97316',
+    padding: '2.5rem',
+    heightAuto: false,
     customClass: { popup: 'swal2-borderless' }
   });
 }
@@ -44,6 +44,7 @@ function showWarningMessage(title, text) {
     text: text,
     confirmButtonText: 'ตกลง',
     confirmButtonColor: '#f59e0b',
+    heightAuto: false,
     customClass: { popup: 'swal2-borderless' }
   });
 }
@@ -55,6 +56,7 @@ function showSuccessMessage(title, text) {
     text: text,
     timer: 2000,
     showConfirmButton: false,
+    heightAuto: false,
     customClass: { popup: 'swal2-borderless' }
   });
 }
