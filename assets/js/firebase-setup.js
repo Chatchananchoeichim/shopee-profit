@@ -19,7 +19,7 @@ function login() {
   const email = document.getElementById('auth-email').value.trim();
   const pass = document.getElementById('auth-pass').value.trim();
   if(!email || !pass) {
-    Swal.fire('ข้อมูลไม่ครบ', 'กรุณากรอกอีเมลและรหัสผ่าน', 'warning'); 
+    showWarningMessage('ข้อมูลไม่ครบ', 'กรุณากรอกอีเมลและรหัสผ่าน'); 
     return;
   }
   
@@ -33,7 +33,7 @@ function login() {
       return firebase.auth().signInWithEmailAndPassword(email, pass);
     })
     .catch((error) => {
-      Swal.fire('เข้าสู่ระบบไม่สำเร็จ', "สาเหตุ: " + error.message, 'error');
+      showErrorMessage('เข้าสู่ระบบไม่สำเร็จ', "สาเหตุ: " + error.message);
       btn.disabled = false;
       btn.innerText = "เข้าสู่ระบบ";
     });
@@ -51,9 +51,8 @@ function resetInactivityTimer() {
   if (state.currentUser) {
     clearTimeout(inactivityTimer);
     inactivityTimer = setTimeout(() => {
-      Swal.fire('เซสชันหมดอายุ', 'ไม่มีการใช้งานเป็นเวลานาน (30 นาที) กรุณาเข้าสู่ระบบใหม่เพื่อความปลอดภัย', 'warning').then(() => {
-        logout();
-      });
+      showWarningMessage('เซสชันหมดอายุ', 'ไม่มีการใช้งานเป็นเวลานาน (30 นาที) กรุณาเข้าสู่ระบบใหม่เพื่อความปลอดภัย');
+      logout();
     }, INACTIVITY_LIMIT_MS);
   }
 }

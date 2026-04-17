@@ -21,7 +21,7 @@ function getFormattedDateStr() {
 function showErrorMessage(title, details) {
   Swal.fire({
     icon: 'error',
-    title: `<span style="font-family:'Outfit',sans-serif; font-weight:800; color:#ef4444;">${title}</span>`,
+    title: `<span style="font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; color:#ef4444;">${title}</span>`,
     html: `
       <div style="text-align:left; font-size:13px; color:#475569; background:#f8fafc; padding:16px; border-radius:12px; border:1px solid #e2e8f0; line-height:1.6;">
         <div style="font-weight:700; color:#ef4444; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
@@ -30,16 +30,32 @@ function showErrorMessage(title, details) {
         </div>
         ${details}
       </div>
-      <div style="margin-top:15px; font-size:12px; color:var(--text-muted); text-align:center;">
-        ลองตรวจสอบไฟล์อีกครั้ง หรือห้ามแก้ไขโครงสร้างไฟล์ Excel ของ Shopee ครับ
-      </div>
     `,
-    confirmButtonText: 'ตกลง รับทราบ',
+    confirmButtonText: 'รับทราบ',
     confirmButtonColor: '#f97316',
-    customClass: {
-      popup: 'swal2-borderless',
-      confirmButton: 'swal2-confirm'
-    }
+    customClass: { popup: 'swal2-borderless' }
+  });
+}
+
+function showWarningMessage(title, text) {
+  Swal.fire({
+    icon: 'warning',
+    title: `<span style="font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; color:#f59e0b;">${title}</span>`,
+    text: text,
+    confirmButtonText: 'ตกลง',
+    confirmButtonColor: '#f59e0b',
+    customClass: { popup: 'swal2-borderless' }
+  });
+}
+
+function showSuccessMessage(title, text) {
+  Swal.fire({
+    icon: 'success',
+    title: `<span style="font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; color:#10b981;">${title}</span>`,
+    text: text,
+    timer: 2000,
+    showConfirmButton: false,
+    customClass: { popup: 'swal2-borderless' }
   });
 }
 async function exportProPDF() {

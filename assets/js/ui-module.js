@@ -543,7 +543,7 @@ function filterByQuickStats(type, el) {
 }
 
 function exportResult(){
-  if(!state.results.length){ Swal.fire('ไม่มีข้อมูล', 'ไม่มีข้อมูลให้ดาวน์โหลด', 'info'); return; }
+  if(!state.results.length){ showWarningMessage('ไม่มีข้อมูล', 'ไม่มีข้อมูลให้ดาวน์โหลด'); return; }
   const rows = state.results.map(r=>({
     'Order ID': r.orderId,
     'สถานะ': r.status,
@@ -562,7 +562,7 @@ function exportResult(){
 }
 
 function exportSummary(){
-  if(!state.summary.length){ Swal.fire('ไม่มีข้อมูล', 'ไม่มีข้อมูลให้ดาวน์โหลด', 'info'); return; }
+  if(!state.summary.length){ showWarningMessage('ไม่มีข้อมูล', 'ไม่มีข้อมูลให้ดาวน์โหลด'); return; }
   const rows = state.summary.map(r=>({
     'SKU': r.sku,
     'สินค้า/ตัวเลือก': r.title,
@@ -740,7 +740,7 @@ function changeAdsPage(p) {
 }
 
 function exportAds() {
-  if (!state.adsData.length) { Swal.fire('ไม่มีข้อมูล', 'ไม่มีข้อมูลโฆษณาให้ดาวน์โหลด', 'info'); return; }
+  if (!state.adsData.length) { showWarningMessage('ไม่มีข้อมูล', 'ไม่มีข้อมูลโฆษณาให้ดาวน์โหลด'); return; }
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(state.adsData.map(d => ({
     'ชื่อโฆษณา': d.name,

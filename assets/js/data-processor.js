@@ -26,16 +26,10 @@ function handleFile(input, type){
         document.getElementById('income-label').textContent = '✓ '+file.name;
         document.getElementById('drop-income').classList.add('has-file');
       }
-      Swal.fire({
-        icon: 'success',
-        title: 'โหลดไฟล์สำเร็จ',
-        text: `ระบบได้รับข้อมูล ${type === 'order' ? 'ออเดอร์' : 'รายรับ'} เรียบร้อยแล้ว`,
-        timer: 1500,
-        showConfirmButton: false
-      });
+      showSuccessMessage('โหลดไฟล์สำเร็จ', `ระบบได้รับข้อมูล ${type === 'order' ? 'ออเดอร์' : 'รายรับ'} เรียบร้อยแล้ว`);
       checkReady();
     } catch(err){ 
-      showErrorMessage('เกิดข้อผิดพลาดในการอ่านไฟล์', 'ไม่สามารถเปิดไฟล์ Excel ได้ครับ กรุณาตรวจสอบว่าไฟล์ไม่ใช่ไฟล์ที่เสียหรือมีการตั้งรหัสผ่านไว้<br><br>Error: ' + err.message); 
+      showErrorMessage('เกิดข้อผิดพลาดในการประมวลผลไฟล์หลัก', `ไม่สามารถเปิดหรือวิเคราะห์ไฟล์ Excel นี้ได้ครับ กรุณาตรวจสอบว่าเป็นไฟล์ CSV/XLSX ที่ถูกต้องและไม่ได้เปิดค้างไว้ในโปรแกรมอื่น<br><br><b>ข้อผิดพลาด:</b> ${err.message}`); 
     }
   };
   reader.readAsArrayBuffer(file);
@@ -79,19 +73,13 @@ function handleAdsFile(input) {
       
       document.getElementById('ads-label').innerHTML = '✓ ' + file.name;
       document.getElementById('drop-ads').classList.add('has-file');
-      Swal.fire({
-        icon: 'success',
-        title: 'โหลดไฟล์ Ads สำเร็จ',
-        text: 'ข้อมูลโฆษณาพร้อมใช้งานแล้วครับ',
-        timer: 1500,
-        showConfirmButton: false
-      });
+      showSuccessMessage('โหลดไฟล์ Ads สำเร็จ', 'ข้อมูลโฆษณาพร้อมใช้งานแล้วครับ');
       renderAdsTable();
       if (state.results.length > 0) renderDashboard();
       document.getElementById('ads-empty').style.display = 'none';
       document.getElementById('ads-content').style.display = 'block';
     } catch(err) {
-      showErrorMessage('เกิดข้อผิดพลาดในการอ่านไฟล์ Ads', 'ไม่สามารถอ่านไฟล์ได้: ' + err.message);
+      showErrorMessage('เกิดข้อผิดพลาดในการอ่านไฟล์ Ads', `ระบบไม่สามารถอ่านข้อมูลโฆษณาได้ครับ กรุณาตรวจสอบรูปแบบไฟล์<br><br><b>ข้อผิดพลาด:</b> ${err.message}`);
     }
   };
   reader.readAsArrayBuffer(file);
@@ -135,7 +123,7 @@ function handleStatsFile(input) {
       document.getElementById('drop-stats').classList.add('has-file');
       if (state.results.length > 0) renderDashboard();
     } catch(err) {
-      showErrorMessage('เกิดข้อผิดพลาดในการอ่านไฟล์', 'ไม่สามารถอ่านไฟล์ XLSX ได้: ' + err.message);
+      showErrorMessage('เกิดข้อผิดพลาดในการอ่านไฟล์ Shop Stats', `ระบบไม่สามารถอ่านข้อมูลสถิติร้านค้าได้ครับ<br><br><b>ข้อผิดพลาด:</b> ${err.message}`);
     }
   };
   reader.readAsArrayBuffer(file);
@@ -197,7 +185,7 @@ function processFilesWithLoader() {
 function processFiles(skipTabSwitch = false){
   try {
     if(!state.orderData || !state.incomeData){ 
-      if(!skipTabSwitch) Swal.fire('ข้อมูลไม่ครบถ้วน', 'กรุณาอัปโหลดไฟล์ทั้ง Order และ Income จากระบบของ Shopee ก่อนกดคำนวณครับ', 'warning'); 
+      if(!skipTabSwitch) showWarningMessage('ข้อมูลไม่ครบถ้วน', 'กรุณาอัปโหลดไฟล์ทั้ง Order และ Income จากระบบของ Shopee ก่อนกดคำนวณครับ'); 
       return; 
     }
 
@@ -232,7 +220,11 @@ function processFiles(skipTabSwitch = false){
     const orderPaidKey  = findKey('ราคาสินค้าที่ชำระโดยผู้ซื้อ (THB)');
 
     if (missingKeys.length > 0) {
-      showErrorMessage('รูปแบบข้อมูลไม่ถูกต้อง', `ไฟล์ Order ที่อัปโหลดขาดคอลัมน์สำคัญดังนี้: <br><br><b>${missingKeys.join(', ')}</b><br><br>กรุณาใช้ไฟล์ต้นฉบับจาก Shopee Seller Center (ห้ามแก้ไขหัวตารางไฟล์ Excel)`);
+      showErrorMessage('โครงสร้างไฟล์ Order ไม่ถูกต้อง', `
+        ไฟล์ Order ที่อัปโหลดขาดคอลัมน์สำคัญที่ระบบจำเป็นต้องใช้ดังนี้: <br><br>
+        <b style="color:#ef4444;">${missingKeys.join(', ')}</b><br><br>
+        คำแนะนำ: กรุณาดาวน์โหลดไฟล์ CSV ต้นฉบับจาก Shopee Seller Center และ <b>ห้ามแก้ไขชื่อหัวตาราง</b> ในไฟล์เด็ดขาดครับ
+      `);
       return;
     }
 
@@ -611,7 +603,7 @@ function handleStatsFile(input) {
       state.shopStats = stats;
       state.shopStatsSummary = summaryStats;
       document.getElementById('drop-stats').classList.add('has-file');
-      Swal.fire('สำเร็จ', 'โหลดข้อมูลสถิติร้านค้าเรียบร้อยแล้ว', 'success');
+      showSuccessMessage('สำเร็จ', 'โหลดข้อมูลสถิติร้านค้าเรียบร้อยแล้ว');
       if (state.results.length > 0) renderDashboard();
     } catch (err) {
       console.error(err);

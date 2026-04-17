@@ -28,10 +28,10 @@ function importCostTable(event){
       });
       saveCostsToLocal();
       if(importedCount > 0) {
-        Swal.fire('นำเข้าข้อมูลสำเร็จ', `อิมพอร์ตข้อมูลต้นทุนแล้ว จำนวน ${importedCount} รายการ`, 'success');
+        showSuccessMessage('นำเข้าข้อมูลสำเร็จ', `อิมพอร์ตข้อมูลต้นทุนแล้ว จำนวน ${importedCount} รายการ`);
       }
     } catch(err) {
-      Swal.fire('เกิดข้อผิดพลาด', "ไม่สามารถอ่านไฟล์ได้ กรุณาตรวจสอบฟอร์แมต Excel ให้ถูกต้อง: " + err.message, 'error');
+      showErrorMessage('เกิดข้อผิดพลาด', "ไม่สามารถอ่านไฟล์ได้ กรุณาตรวจสอบฟอร์แมต Excel ให้ถูกต้อง: " + err.message);
     }
     event.target.value = '';
   };
@@ -44,7 +44,7 @@ function saveCostsToLocal() {
   if (dbRef) {
       const dataToSave = (state.costData && state.costData.length > 0) ? state.costData : null;
       dbRef.set(dataToSave).catch((error) => {
-        Swal.fire('ข้อผิดพลาดจากฐานข้อมูล', "ไม่สามารถบันทึกข้อมูลขึ้น Firebase ได้: อาจจะเกิดจากสิทธิ์การใช้งานของ Database\n\n(" + error.message + ")", 'error');
+        showErrorMessage('ข้อผิดพลาดจากฐานข้อมูล', "ไม่สามารถบันทึกข้อมูลขึ้น Firebase ได้: อาจจะเกิดจากสิทธิ์การใช้งานของ Database<br><br>(" + error.message + ")");
         if(document.getElementById('sync-status-text')) document.getElementById('sync-status-text').innerText = "🔴 ออฟไลน์ (บันทึกไม่สำเร็จ)";
      });
   }
@@ -65,7 +65,7 @@ function resetDefaultCosts(){
       state.costData = [];
       if(dbRef) dbRef.set([]);
       renderCostTable();
-      Swal.fire('สำเร็จ', 'ข้อมูลต้นทุนทั้งหมดถูกลบเรียบร้อยแล้ว', 'success');
+      showSuccessMessage('สำเร็จ', 'ข้อมูลต้นทุนทั้งหมดถูกลบเรียบร้อยแล้ว');
     }
   });
 }
@@ -281,7 +281,7 @@ function saveCost(id){
   const v = document.getElementById('edit-var-'+id).value.trim();
   const c = parseFloat(document.getElementById('edit-cost-'+id).value);
   if(isNaN(c)) { 
-    Swal.fire('ข้อมูลไม่ถูกต้อง', 'กรุณากรอกราคาต้นทุนเป็นตัวเลขให้ถูกต้อง', 'warning'); 
+    showWarningMessage('ข้อมูลไม่ถูกต้อง', 'กรุณากรอกราคาต้นทุนเป็นตัวเลขให้ถูกต้อง'); 
     return; 
   }
   
@@ -292,13 +292,7 @@ function saveCost(id){
     row.variant = v;
     row.cost = c;
     saveCostsToLocal();
-    Swal.fire({
-      icon: 'success',
-      title: 'บันทึกสำเร็จ',
-      text: 'แก้ไขข้อมูลต้นทุนเรียบร้อยแล้วครับ',
-      timer: 1500,
-      showConfirmButton: false
-    });
+    showSuccessMessage('บันทึกสำเร็จ', 'แก้ไขข้อมูลต้นทุนเรียบร้อยแล้วครับ');
   }
   state.editingId = null;
   renderCostTable();
@@ -325,13 +319,7 @@ function duplicateCost(id){
         saveCostsToLocal();
         renderCostTable();
         processFiles(true); // Sync results
-        Swal.fire({
-          icon: 'success',
-          title: 'คัดลอกสำเร็จ',
-          text: 'สร้างข้อมูลชุดใหม่จากการคัดลอกเรียบร้อยครับ',
-          timer: 1500,
-          showConfirmButton: false
-        });
+        showSuccessMessage('คัดลอกสำเร็จ', 'สร้างข้อมูลชุดใหม่จากการคัดลอกเรียบร้อยครับ');
       }
     });
   }
@@ -342,8 +330,8 @@ function addCostRow(){
   const p = document.getElementById('new-product').value.trim();
   const v = document.getElementById('new-variant').value.trim();
   const c = parseFloat(document.getElementById('new-cost').value);
-  if(!s && !v && !p) { Swal.fire('ข้อมูลไม่ครบ', 'กรุณากรอก SKU หรือชื่อตัวเลือก หรือ ชื่อสินค้า อย่างน้อยหนึ่งอย่าง', 'warning'); return; }
-  if(isNaN(c)) { Swal.fire('ข้อผิดพลาด', 'กรุณากรอกต้นทุนให้ถูกต้อง', 'warning'); return; }
+  if(!s && !v && !p) { showWarningMessage('ข้อมูลไม่ครบ', 'กรุณากรอก SKU หรือชื่อตัวเลือก หรือ ชื่อสินค้า อย่างน้อยหนึ่งอย่าง'); return; }
+  if(isNaN(c)) { showWarningMessage('ข้อผิดพลาด', 'กรุณากรอกต้นทุนให้ถูกต้อง'); return; }
   
   Swal.fire({
     title: 'ยืนยันการบันทึกต้นทุน',
@@ -362,7 +350,7 @@ function addCostRow(){
       document.getElementById('new-cost').value='';
       renderCostTable();
       processFiles(true); // Sync results in background
-      Swal.fire({ title: 'สำเร็จ', text: 'เพิ่มข้อมูลต้นทุนสำเร็จ', icon: 'success', timer: 1500, showConfirmButton: false });
+      showSuccessMessage('สำเร็จ', 'เพิ่มข้อมูลต้นทุนสำเร็จ');
     }
   });
 }
@@ -386,7 +374,7 @@ function deleteCost(id){
       saveCostsToLocal();
       renderCostTable();
       processFiles(true); // Sync results
-      Swal.fire({ title: 'ลบแล้ว!', text: 'ลบข้อมูลต้นทุนเรียบร้อย', icon: 'success', timer: 1500, showConfirmButton: false });
+      showSuccessMessage('ลบแล้ว!', 'ลบข้อมูลต้นทุนเรียบร้อย');
     }
   });
 }
