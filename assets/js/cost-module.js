@@ -296,7 +296,7 @@ function saveCost(id){
   }
   state.editingId = null;
   renderCostTable();
-  processFiles(true); // Sync results
+  processFiles(true, true); // Sync results
 }
 
 function duplicateCost(id){
@@ -318,7 +318,7 @@ function duplicateCost(id){
         state.editingId = newId;
         saveCostsToLocal();
         renderCostTable();
-        processFiles(true); // Sync results
+        processFiles(true, true); // Sync results background
         showSuccessMessage('คัดลอกสำเร็จ', 'สร้างข้อมูลชุดใหม่จากการคัดลอกเรียบร้อยครับ');
       }
     });
@@ -349,7 +349,7 @@ function addCostRow(){
       document.getElementById('new-variant').value='';
       document.getElementById('new-cost').value='';
       renderCostTable();
-      processFiles(true); // Sync results
+      processFiles(true, true); // Sync results
       showSuccessMessage('เพิ่มสำเร็จ', `บันทึกต้นทุนสำหรับ <b>${p || v || s}</b> เรียบร้อยแล้วครับ`);
     }
   });
@@ -373,7 +373,7 @@ function deleteCost(id){
       state.costData = state.costData.filter(r => r.id !== id);
       saveCostsToLocal();
       renderCostTable();
-      processFiles(true); // Sync results
+      processFiles(true, true); // Sync results
       showSuccessMessage('ลบแล้ว!', 'ลบข้อมูลต้นทุนเรียบร้อย');
     }
   });

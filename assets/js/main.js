@@ -10,10 +10,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initialize Auto-Animate
   if (typeof autoAnimate !== 'undefined') {
     const containers = [
-      document.getElementById('tab-container-root'),
-      document.getElementById('result-tbody'),
-      document.getElementById('summary-tbody'),
-      document.getElementById('ads-tbody'),
       document.getElementById('missing-variants')
     ];
     containers.forEach(el => { if(el) autoAnimate(el); });

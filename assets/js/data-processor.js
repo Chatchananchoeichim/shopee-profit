@@ -182,7 +182,7 @@ function processFilesWithLoader() {
   });
 }
 
-function processFiles(skipTabSwitch = false){
+function processFiles(skipTabSwitch = false, isBackground = false){
   try {
     if(!state.orderData || !state.incomeData){ 
       if(!skipTabSwitch) showWarningMessage('ข้อมูลไม่ครบถ้วน', 'กรุณาอัปโหลดไฟล์ทั้ง Order และ Income จากระบบของ Shopee ก่อนกดคำนวณครับ'); 

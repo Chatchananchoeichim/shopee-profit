@@ -596,28 +596,55 @@ function editIncomeOverride(orderId, currentVal) {
   }
 
   Swal.fire({
-    title: 'แก้ไขรายรับ (Income)',
+    title: `<span style="font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; color:var(--text);">แก้ไขรายรับ (Income)</span>`,
     html: `
-      <div style="text-align:left; padding:10px;">
-        <div style="font-size:12px;color:rgba(0,0,0,0.4);margin-bottom:4px;">หมายเลขคำสั่งซื้อ</div>
-        <div style="font-size:16px;font-weight:700;margin-bottom:15px;color:var(--text);">${orderId}</div>
-        <div style="font-size:12px;color:rgba(0,0,0,0.4);margin-bottom:8px;">ระบุยอดเงินที่ได้รับจริง (฿)</div>
+      <div style="text-align:left; background:var(--primary-light); padding:24px; border-radius:20px; border:1px solid rgba(249,115,22,0.1); margin-top:24px;">
+        <div style="display:flex; align-items:center; gap:16px; margin-bottom:20px;">
+          <div style="width:48px; height:48px; background:var(--primary); color:white; border-radius:12px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(249,115,22,0.3);">
+            <span class="material-symbols-rounded" style="font-size:28px;">account_balance_wallet</span>
+          </div>
+          <div>
+            <div style="font-size:11px; font-weight:700; color:var(--primary); text-transform:uppercase; letter-spacing:0.05em; opacity:0.8;">Order ID</div>
+            <div style="font-size:16px; font-weight:800; color:var(--text);">${orderId}</div>
+          </div>
+        </div>
+        
+        <div style="margin-bottom:8px;">
+          <label for="swal-input1" style="font-size:13px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:12px;">ระบุยอดเงินที่ได้รับจริงจาก Shopee (฿)</label>
+          <div style="position:relative;">
+            <span style="position:absolute; left:18px; top:50%; transform:translateY(-50%); color:var(--text-faint); font-weight:700; font-size:20px;">฿</span>
+            <input type="number" id="swal-input1" class="swal2-input" value="${currentVal}" step="0.01" 
+                   style="margin:0; width:100%; height:60px; padding-left:44px; border-radius:16px; border:2px solid var(--border); 
+                          font-size:24px; font-weight:800; color:var(--primary); background:white; transition:all 0.2s;">
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:20px; padding:12px 16px; background:#f8fafc; border-radius:12px; display:flex; gap:10px; align-items:flex-start; text-align:left;">
+        <span class="material-symbols-rounded" style="font-size:18px; color:var(--amber);">info</span>
+        <span style="font-size:12px; color:var(--text-muted); line-height:1.5;">
+          ระบบจะนำยอดนี้ไปคำนวณกำไรแทนยอดเดิมทันที สำหรับกรณีที่สถานะออเดอร์ยังไม่โอนเงิน (สีส้ม)
+        </span>
       </div>
     `,
-    input: 'number',
-    inputValue: currentVal,
-    inputAttributes: { step: '0.01', style: 'border-radius:12px; padding:12px; font-size:18px; font-weight:700;' },
     showCancelButton: true,
     confirmButtonText: 'บันทึกข้อมูล',
     cancelButtonText: 'ยกเลิก',
-    confirmButtonColor: '#f97316', // Torque Primary
+    confirmButtonColor: '#f97316',
     cancelButtonColor: '#94a3b8',
-    background: '#fff',
-    padding: '24px',
+    reverseButtons: true,
+    padding: '2.5rem',
     customClass: {
-      popup: 'swal2-borderless',
-      title: 'swal2-title-main',
-      input: 'swal2-input-premium'
+      popup: 'premium-swal-popup',
+      confirmButton: 'premium-confirm-btn',
+      cancelButton: 'premium-cancel-btn'
+    },
+    preConfirm: () => {
+      const val = document.getElementById('swal-input1').value;
+      if (!val || isNaN(parseFloat(val))) {
+        Swal.showValidationMessage('กรุณาระบุจำนวนเงินให้ถูกต้อง');
+        return false;
+      }
+      return val;
     }
   }).then((result) => {
     if (result.isConfirmed) {
