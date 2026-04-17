@@ -47,12 +47,15 @@ function renderResultTable(){
 
   if(state.resultSearchQuery) {
     const q = state.resultSearchQuery.toLowerCase();
-    data = data.filter(r => 
-      (r.orderId && r.orderId.toLowerCase().includes(q)) ||
-      (r.product && r.product.toLowerCase().includes(q)) ||
-      (r.status && r.status.toLowerCase().includes(q)) ||
-      (r.sku && r.sku.toLowerCase().includes(q))
+    // Find all order IDs that have at least one item matching the search
+    const matchingOrderIds = new Set(
+      state.results.filter(r => {
+        const fullText = `${r.orderId} ${r.product} ${r.variant} ${r.sku} ${r.status}`.toLowerCase();
+        return fullText.includes(q);
+      }).map(r => r.orderId)
     );
+    // Filter the current data (which might already have mode filters) to only these orders
+    data = data.filter(r => matchingOrderIds.has(r.orderId));
   }
 
   // Pagination logic based on unique orders
@@ -194,27 +197,30 @@ function renderResultTable(){
     `;
 
     if(r.isFirst) {
-      // Shopee fee breakdown
-      const shopeeFee = Math.max(0, (r.orderSalePrice||0) - (r.income||0));
+      // Shopee fee breakdown - Sum of specific items
       const feeItems = [
-        { label: 'คอมมิชชั่น', val: r.commFee },
-        { label: 'ค่าบริการ', val: r.servFee },
-        { label: 'ธุรกรรม', val: r.transFee }
-      ].filter(f => Math.abs(f.val||0) > 0);
+        { label: 'ค่าคอมมิชชั่น', val: (r.commFee || 0) + (r.commAMSFee || 0) },
+        { label: 'ค่าบริการ', val: r.servFee || 0 },
+        { label: 'ค่าธรรมเนียมโครงสร้างพื้นฐาน', val: r.platFee || 0 },
+        { label: 'ค่าธุรกรรมการชำระเงิน', val: r.transFee || 0 },
+        { label: 'หักค่าจัดส่ง', val: r.shipDeduct || 0 }
+      ].filter(f => Math.abs(f.val) > 0.01);
+
+      const totalDeduction = feeItems.reduce((sum, item) => sum + Math.abs(item.val), 0);
 
       const feeBreakdown = feeItems.length > 0
         ? `<div style="margin-top:6px;border-top:1px dashed #fca5a5;padding-top:4px;">` +
           feeItems.map(f =>
             `<div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;color:#9ca3af;line-height:1.8;gap:8px;">
               <span>${f.label}</span>
-              <span style="color:#f87171;font-weight:500;">-฿${Math.abs(f.val).toLocaleString(undefined,{maximumFractionDigits:0})}</span>
+              <span style="color:#f87171;font-weight:500;">-฿${Math.abs(f.val).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2})}</span>
             </div>`
           ).join('') + `</div>`
         : '';
 
       html += `<td rowspan="${r.rowSpan}" style="padding:10px 12px;vertical-align:top;min-width:140px;" class="border-right">
         <div style="display:flex;align-items:center;justify-content:flex-end;gap:4px;">
-          <span style="font-size:13px;font-weight:700;color:var(--red);">-฿${shopeeFee.toLocaleString(undefined,{maximumFractionDigits:0})}</span>
+          <span style="font-size:13px;font-weight:700;color:var(--red);">-฿${totalDeduction.toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2})}</span>
         </div>
         ${feeBreakdown}
       </td>`;
@@ -316,11 +322,10 @@ function renderSummaryTable(){
   let data = state.summary;
   if(state.summarySearchQuery) {
     const q = state.summarySearchQuery.toLowerCase();
-    data = data.filter(r => 
-      (r.sku && r.sku.toLowerCase().includes(q)) ||
-      (r.product && r.product.toLowerCase().includes(q)) ||
-      (r.variant && r.variant.toLowerCase().includes(q))
-    );
+    data = data.filter(r => {
+      const fullText = `${r.sku} ${r.product} ${r.variant} ${r.title}`.toLowerCase();
+      return fullText.includes(q);
+    });
   }
 
   // Sort

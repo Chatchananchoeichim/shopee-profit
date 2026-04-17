@@ -335,7 +335,7 @@ function processFiles(skipTabSwitch = false){
           unitCost = lookupCost(item.product, item.variant, item.sku);
           if(unitCost === null){
             missingCost = true;
-            const k = item.sku || item.variant || '(ไม่มี variant)';
+            const k = `${item.product}||${item.variant||''}||${item.sku||''}`;
             missingVariants.set(k, { sku: item.sku, variant: item.variant, product: item.product });
           } else { orderCost += (unitCost * item.qty); }
         }
@@ -513,9 +513,13 @@ function processFiles(skipTabSwitch = false){
       else {
         let mvHtml = '<div class="alert warning">⚠ พบ '+missingVariants.size+' รายการออเดอร์ที่ยังไม่มีต้นทุน</div>';
         missingVariants.forEach((data, k) => {
-          const displayStr = data.sku ? `SKU: ${data.sku}` : `Variant: ${data.variant || data.product}`;
-          mvHtml += `<div class="missing-row flex-between">
-            <span style="font-size:12px">${displayStr}</span>
+          const productPart = data.product ? `<b>${data.product}</b>` : '';
+          const variantPart = data.variant ? ` | <span style="color:var(--text-muted)">Variant: ${data.variant}</span>` : '';
+          const skuPart = data.sku ? ` <small style="color:var(--primary); background:var(--primary-light); padding:2px 6px; border-radius:4px; margin-left:8px;">SKU: ${data.sku}</small>` : '';
+          
+          const displayStr = productPart + variantPart + skuPart;
+          mvHtml += `<div class="missing-row flex-between" style="padding: 10px 14px; border-bottom: 1px solid var(--border); background: var(--surface);">
+            <div style="font-size:13px; line-height: 1.4;">${displayStr}</div>
             <button class="btn sm" onclick="prefillVariant('${(data.sku||'').replace(/'/g,"\\'")}','${(data.product||'').replace(/'/g,"\\'")}','${(data.variant||'').replace(/'/g,"\\'")}')">+ เพิ่ม Cost</button>
           </div>`;
         });

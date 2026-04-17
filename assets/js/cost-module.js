@@ -335,7 +335,7 @@ function addCostRow(){
   
   Swal.fire({
     title: 'ยืนยันการบันทึกต้นทุน',
-    html: `เพิ่มข้อมูล: <b>${s || v || p}</b><br>ราคาต้นทุน: <b>฿${c}</b>`,
+    html: `สินค้า: <b>${p || '-'}</b><br>${v ? 'ตัวเลือก: <b>'+v+'</b><br>':''}${s ? 'SKU: <b>'+s+'</b><br>':''}ราคาต้นทุน: <b>฿${c.toLocaleString()}</b>`,
     icon: 'question',
     showCancelButton: true,
     confirmButtonText: 'บันทึก',
@@ -349,8 +349,8 @@ function addCostRow(){
       document.getElementById('new-variant').value='';
       document.getElementById('new-cost').value='';
       renderCostTable();
-      processFiles(true); // Sync results in background
-      showSuccessMessage('สำเร็จ', 'เพิ่มข้อมูลต้นทุนสำเร็จ');
+      processFiles(true); // Sync results
+      showSuccessMessage('เพิ่มสำเร็จ', `บันทึกต้นทุนสำหรับ <b>${p || v || s}</b> เรียบร้อยแล้วครับ`);
     }
   });
 }
