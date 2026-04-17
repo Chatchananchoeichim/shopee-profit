@@ -61,6 +61,7 @@
 
 <!-- MAIN APP UI -->
 <div id="app-container" class="layout-wrapper" style="display: none;">
+  <div id="sidebar-overlay" class="sidebar-overlay"></div>
   
   <!-- NEW SIDEBAR NAV -->
   <aside class="sidebar">
@@ -72,6 +73,9 @@
       <div style="display:flex; gap: 8px;">
         <button class="theme-toggle" onclick="toggleTheme()" title="สลับโหมด มืด/สว่าง">
           <span class="material-symbols-rounded">dark_mode</span>
+        </button>
+        <button class="theme-toggle sidebar-toggle mobile-close mobile-only" id="mobile-sidebar-close" title="ปิดเมนู">
+          <span class="material-symbols-rounded">close</span>
         </button>
         <button class="theme-toggle sidebar-toggle" onclick="toggleSidebar()" title="หุบ/ขยาย แถบข้าง">
           <span class="material-symbols-rounded">menu_open</span>
@@ -119,13 +123,16 @@
 
   <main class="main-content">
     <div class="top-bar">
-      <div class="page-info" style="display:flex; align-items:center; gap:20px;">
+      <button id="mobile-menu-toggle" class="btn sm mobile-only" style="width: 48px; height: 48px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); color: var(--text); align-items: center; justify-content: center; margin-right: 12px; flex-shrink: 0;">
+        <span class="material-symbols-rounded">menu</span>
+      </button>
+      <div class="page-info" style="display:flex; align-items:center; gap:20px; flex-grow: 1;">
         <div class="page-icon-box" style="width:52px; height:52px; background:var(--primary-light); color:var(--primary); border-radius:14px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
           <span class="material-symbols-rounded" id="current-page-icon" style="font-size:32px;">upload_file</span>
         </div>
-        <div>
-          <h1 id="current-page-title" style="margin:0; font-size:24px;">นำเข้าไฟล์</h1>
-          <p id="current-page-sub" style="margin:0; opacity:0.7;">อัพโหลดไฟล์จาก Shopee และเตรียมการคำนวณ</p>
+        <div style="overflow: hidden;">
+          <h1 id="current-page-title" style="margin:0; font-size:24px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">นำเข้าไฟล์</h1>
+          <p id="current-page-sub" style="margin:0; opacity:0.7; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">อัพโหลดไฟล์จาก Shopee และเตรียมการคำนวณ</p>
         </div>
       </div>
       <div class="top-bar-actions">

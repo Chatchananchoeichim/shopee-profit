@@ -809,3 +809,139 @@ td input {
   font-size: 13px !important;
   height: 34px;
 }
+
+/* RESPONSIVE DESIGN */
+.mobile-only { display: none !important; }
+
+@media (max-width: 1024px) {
+  :root {
+    --sidebar-w: 280px;
+  }
+
+  .mobile-only { display: flex !important; }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    transform: translateX(-100%);
+    box-shadow: 20px 0 50px rgba(0,0,0,0.1);
+    z-index: 200; /* Higher than top-bar */
+  }
+
+  .sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  .sidebar-header {
+    margin-bottom: 24px;
+  }
+
+  /* Show close button on sidebar for mobile */
+  .sidebar-toggle.mobile-close {
+    display: flex !important;
+  }
+
+  .main-content {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+
+  #mobile-menu-toggle {
+    display: flex !important;
+  }
+
+  .top-bar {
+    padding: 12px 16px;
+    gap: 12px;
+  }
+
+  .page-info {
+    gap: 12px !important;
+  }
+
+  .page-icon-box {
+    width: 40px !important;
+    height: 40px !important;
+  }
+
+  .page-icon-box span {
+    font-size: 24px !important;
+  }
+
+  .page-info h1 {
+    font-size: 18px !important;
+  }
+
+  .page-info p {
+    font-size: 11px !important;
+  }
+
+  #tab-container-root {
+    padding: 16px;
+  }
+
+  .top-bar-actions {
+    gap: 10px;
+  }
+
+  .sync-indicator span {
+    display: none;
+  }
+  
+  .sync-indicator {
+    padding: 8px;
+    background: var(--surface);
+    border-radius: 50%;
+  }
+}
+
+@media (max-width: 768px) {
+  .top-bar-actions {
+    width: auto;
+  }
+
+  .btn-pdf span {
+    display: none;
+  }
+  
+  .btn-pdf {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .row-add {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 16px;
+  }
+
+  .row-add .btn {
+    width: 100%;
+    margin-top: 8px;
+  }
+
+  .flex-gap {
+    flex-wrap: wrap;
+  }
+
+  .auth-box {
+    padding: 24px;
+    margin: 20px;
+  }
+}
+
+/* Overlay for mobile sidebar */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 150;
+}
+
+.sidebar-overlay.active {
+  display: block;
+}

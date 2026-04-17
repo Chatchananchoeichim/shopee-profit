@@ -753,3 +753,32 @@ function exportAds() {
   }))), 'Ads_Analytics');
   XLSX.writeFile(wb, `Torque_Ads_Report_${new Date().toISOString().slice(0,10)}.xlsx`);
 }
+
+// MOBILE MENU LOGIC
+document.addEventListener('DOMContentLoaded', () => {
+  const toggleBtn = document.getElementById('mobile-menu-toggle');
+  const closeBtn = document.getElementById('mobile-sidebar-close');
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  
+  if (sidebar && overlay) {
+    const toggleMenu = () => {
+      sidebar.classList.toggle('mobile-open');
+      overlay.classList.toggle('active');
+    };
+    
+    if (toggleBtn) toggleBtn.addEventListener('click', toggleMenu);
+    if (closeBtn) closeBtn.addEventListener('click', toggleMenu);
+    overlay.addEventListener('click', toggleMenu);
+    
+    // Close menu when clicking nav items on mobile
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('click', () => {
+        if (window.innerWidth <= 1024) {
+          sidebar.classList.remove('mobile-open');
+          overlay.classList.remove('active');
+        }
+      });
+    });
+  }
+});
