@@ -209,7 +209,7 @@ async function exportProPDF() {
         doc.text(`รายงานสรุปรายสินค้า (Product Summary)`, 14, 15);
       }
       
-      const summaryHeaders = [['SKU', 'สินค้า/ตัวเลือก', 'จำนวนขาย', 'รายได้', 'ต้นทุน', 'กำไรสุทธิ']];
+      const summaryHeaders = [['SKU', 'สินค้า/ตัวเลือก', 'จำนวน', 'รายได้รวม', 'ต้นทุนรวม', 'กำไรสุทธิ', 'ต้นทุน/ชิ้น', 'รายได้/ชิ้น', 'กำไร/ชิ้น']];
       // Typecast everything to string here too
       const summaryData = exportSummary.map(r => [
         String(r.sku || '-'),
@@ -217,7 +217,10 @@ async function exportProPDF() {
         String(r.qty || 0),
         String(Math.round(r.revenue || 0).toLocaleString()),
         String(Math.round(r.cost || 0).toLocaleString()),
-        String(Math.round((r.revenue || 0) - (r.cost || 0)).toLocaleString())
+        String(Math.round((r.revenue || 0) - (r.cost || 0)).toLocaleString()),
+        String(Math.round(r.qty>0?r.cost/r.qty:0).toLocaleString()),
+        String(Math.round(r.qty>0?r.revenue/r.qty:0).toLocaleString()),
+        String(Math.round(r.qty>0?(r.revenue-r.cost)/r.qty:0).toLocaleString())
       ]);
 
       doc.autoTable({
@@ -225,7 +228,17 @@ async function exportProPDF() {
         body: summaryData,
         startY: isSummaryTab ? 28 : 22,
         styles: { font: 'Sarabun', fontSize: 8, cellPadding: 2, lineColor: [226, 232, 240], lineWidth: 0.1 },
-        headStyles: { fillColor: [59, 130, 246], textColor: [255, 255, 255], fontStyle: 'bold' }
+        headStyles: { fillColor: [59, 130, 246], textColor: [255, 255, 255], fontStyle: 'bold' },
+        columnStyles: {
+          1: { cellWidth: 'auto' }, // Allow product title to wrap
+          2: { halign: 'center' },
+          3: { halign: 'right' },
+          4: { halign: 'right' },
+          5: { halign: 'right' },
+          6: { halign: 'right' },
+          7: { halign: 'right' },
+          8: { halign: 'right' }
+        }
       });
     }
 
