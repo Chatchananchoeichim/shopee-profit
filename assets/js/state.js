@@ -10,7 +10,7 @@ let state = {
   filterMode: 'all',
   fileOrderLoaded: false,
   fileIncomeLoaded: false,
-  editingId: null,
+  editingIds: new Set(),
   shopStats: null,
   currentUser: null,
   currentPage: 1,

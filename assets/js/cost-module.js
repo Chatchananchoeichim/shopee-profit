@@ -151,7 +151,7 @@ function renderCostTable(){
 
   pageData.forEach(row => {
     const tr = document.createElement('tr');
-    if (state.editingId === row.id) {
+    if (state.editingIds && state.editingIds.has(row.id)) {
       tr.innerHTML = `
         <td style="padding-right:4px"><input type="text" id="edit-sku-${row.id}" value="${row.sku || ''}"></td>
         <td style="padding-right:4px"><input type="text" id="edit-prod-${row.id}" value="${row.product || ''}"></td>
@@ -159,7 +159,7 @@ function renderCostTable(){
         <td style="padding-right:4px"><input type="number" id="edit-cost-${row.id}" value="${row.cost}"></td>
         <td style="display:flex;gap:4px;justify-content:flex-end">
           <button class="btn primary sm" onclick="saveCost(${row.id})">✔</button>
-          <button class="btn sm" onclick="cancelEdit()">✖</button>
+          <button class="btn sm" onclick="cancelEdit(${row.id})">✖</button>
         </td>
       `;
     } else {
@@ -179,6 +179,16 @@ function renderCostTable(){
   });
   
   renderCostPagination(totalPages);
+  
+  const multiEditActions = document.getElementById('multi-edit-actions');
+  if (multiEditActions) {
+    if (state.editingIds && state.editingIds.size > 0) {
+      multiEditActions.style.display = 'flex';
+      multiEditActions.querySelector('button.primary').innerText = `✔️ บันทึกที่แก้ไข (${state.editingIds.size})`;
+    } else {
+      multiEditActions.style.display = 'none';
+    }
+  }
 }
 
 function filterCostTable() {
@@ -266,12 +276,13 @@ function changeCostPerPage(val) {
 }
 
 function editCost(id){
-  state.editingId = id;
+  if (!state.editingIds) state.editingIds = new Set();
+  state.editingIds.add(id);
   renderCostTable();
 }
 
-function cancelEdit(){
-  state.editingId = null;
+function cancelEdit(id){
+  if (state.editingIds) state.editingIds.delete(id);
   renderCostTable();
 }
 
@@ -294,9 +305,53 @@ function saveCost(id){
     saveCostsToLocal();
     showSuccessMessage('บันทึกสำเร็จ', 'แก้ไขข้อมูลต้นทุนเรียบร้อยแล้วครับ');
   }
-  state.editingId = null;
+  if (state.editingIds) state.editingIds.delete(id);
   renderCostTable();
   processFiles(true, true); // Sync results
+}
+
+function cancelAllEdits() {
+  if (state.editingIds) state.editingIds.clear();
+  renderCostTable();
+}
+
+function saveAllCosts() {
+  if (!state.editingIds || state.editingIds.size === 0) return;
+  
+  let hasError = false;
+  let savedCount = 0;
+  
+  state.editingIds.forEach(id => {
+    const cEl = document.getElementById('edit-cost-'+id);
+    if (!cEl) return;
+    const c = parseFloat(cEl.value);
+    if(isNaN(c)) { 
+      hasError = true;
+      return; 
+    }
+    const row = state.costData.find(r => r.id === id);
+    if(row){
+      row.sku = document.getElementById('edit-sku-'+id).value.trim();
+      row.product = document.getElementById('edit-prod-'+id).value.trim();
+      row.variant = document.getElementById('edit-var-'+id).value.trim();
+      row.cost = c;
+      savedCount++;
+    }
+  });
+  
+  if (hasError) {
+    showWarningMessage('ข้อมูลไม่ถูกต้อง', 'กรุณากรอกราคาต้นทุนเป็นตัวเลขให้ถูกต้อง สำหรับบางรายการ');
+    return;
+  }
+  
+  if (savedCount > 0) {
+    saveCostsToLocal();
+    showSuccessMessage('บันทึกสำเร็จ', `แก้ไขข้อมูลต้นทุนเรียบร้อยแล้ว ${savedCount} รายการ`);
+    processFiles(true, true); // Sync results
+  }
+  
+  state.editingIds.clear();
+  renderCostTable();
 }
 
 function duplicateCost(id){
@@ -315,7 +370,8 @@ function duplicateCost(id){
         const newRow = { ...row, id: newId };
         const index = state.costData.findIndex(r => r.id === id);
         state.costData.splice(index + 1, 0, newRow);
-        state.editingId = newId;
+        if (!state.editingIds) state.editingIds = new Set();
+        state.editingIds.add(newId);
         saveCostsToLocal();
         renderCostTable();
         processFiles(true, true); // Sync results background

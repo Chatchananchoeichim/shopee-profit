@@ -214,7 +214,12 @@
             <span id="cost-sync-status" style="font-size:12px;color:var(--text-faint); margin-left: 8px;">● ตรวจสอบการซิงก์...</span>
           </p>
         </div>
-        <div style="display:flex;gap:8px;">
+        <div style="display:flex;gap:8px; align-items:center;">
+          <div id="multi-edit-actions" style="display:none; gap:8px;">
+            <button class="btn primary" onclick="saveAllCosts()">✔️ บันทึกที่แก้ไขทั้งหมด</button>
+            <button class="btn" onclick="cancelAllEdits()">✖️ ยกเลิกทั้งหมด</button>
+            <div style="width: 1px; height: 24px; background: var(--border); margin: 0 4px;"></div>
+          </div>
           <input type="file" id="cost-import-file" accept=".xlsx,.xls" style="display:none" onchange="importCostTable(event)">
           <button class="btn" onclick="document.getElementById('cost-import-file').click()" style="background:var(--blue-light);color:var(--blue);border-color:var(--blue-light)">Import Cost</button>
           <button class="btn" onclick="exportCostTable()">Export Cost Table</button>
