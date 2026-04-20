@@ -110,14 +110,15 @@ function renderResultTable(){
   const startIdx = (state.currentPage - 1) * state.itemsPerPage;
   const pageOrders = new Set(allUniqueOrders.slice(startIdx, startIdx + state.itemsPerPage));
   
-  const pageData = data.filter(r => pageOrders.has(r.orderId))
-    .sort((a, b) => {
-      // Keep original item order within same orderId, matching sorted order list
-      const ai = allUniqueOrders.indexOf(a.orderId);
-      const bi = allUniqueOrders.indexOf(b.orderId);
-      if (ai !== bi) return ai - bi;
-      return 0;
-    });
+  const allSortedData = [...data].sort((a, b) => {
+    const ai = allUniqueOrders.indexOf(a.orderId);
+    const bi = allUniqueOrders.indexOf(b.orderId);
+    if (ai !== bi) return ai - bi;
+    return 0;
+  });
+  state.currentExportResult = allSortedData;
+
+  const pageData = allSortedData.filter(r => pageOrders.has(r.orderId));
 
   if (pageData.length === 0) {
     const tr = document.createElement('tr');
@@ -339,14 +340,12 @@ function renderSummaryTable(){
       if (ss.col === 'qty') return (a.qty - b.qty) * dir;
       if (ss.col === 'revenue') return (a.revenue - b.revenue) * dir;
       if (ss.col === 'cost') return (a.cost - b.cost) * dir;
-      if (ss.col === 'profit') {
-        const pa = (a.qty > 0 ? a.revenue/a.qty : 0) - (a.qty > 0 ? a.cost/a.qty : 0);
-        const pb = (b.qty > 0 ? b.revenue/b.qty : 0) - (b.qty > 0 ? b.cost/b.qty : 0);
-        return (pa - pb) * dir;
-      }
+      if (ss.col === 'profit') return ((a.revenue - a.cost) - (b.revenue - b.cost)) * dir;
       return 0;
     });
   }
+
+  state.currentExportSummary = data;
 
   const totalItems = data.length;
   const totalAvailableItems = state.summary.length;
@@ -462,12 +461,14 @@ function switchTab(name){
   const iconEl = document.getElementById('current-page-icon');
   if (iconEl) iconEl.innerText = info.i;
 
-  // Show/Hide PDF button in Results or Dashboard or Summary
-  const pdfBtn = document.getElementById('btn-export-pdf');
-  if (['result', 'summary', 'dashboard'].includes(name) && state.results.length > 0) {
-    pdfBtn.style.display = 'flex';
-  } else {
-    pdfBtn.style.display = 'none';
+  // Show/Hide export group in Results or Dashboard or Summary
+  const exportGroup = document.getElementById('top-export-group');
+  if (exportGroup) {
+    if (['result', 'summary', 'dashboard'].includes(name) && state.results.length > 0) {
+      exportGroup.style.display = 'flex';
+    } else {
+      exportGroup.style.display = 'none';
+    }
   }
 }
 
@@ -549,21 +550,165 @@ function filterByQuickStats(type, el) {
 
 function exportResult(){
   if(!state.results.length){ showWarningMessage('ไม่มีข้อมูล', 'ไม่มีข้อมูลให้ดาวน์โหลด'); return; }
-  const rows = state.results.map(r=>({
-    'Order ID': r.orderId,
-    'สถานะ': r.status,
-    'SKU': r.sku,
-    'สินค้า': r.product,
-    'Variant': r.variant,
-    'จำนวน': r.qty,
-    'ยอดขาย/ชิ้น': r.salePrice,
-    'Income โอน (ต่อออเดอร์)': r.isFirst ? r.income : '',
-    'ต้นทุน (รวมตามจำนวน)': r.itemCostTotal,
-    'Net กำไร (ต่อออเดอร์)': r.isFirst ? r.net : ''
-  }));
+  
+  const headers = ['Order ID', 'สถานะ', 'ช่องทางชำระ', '% หัก', 'SKU', 'สินค้า', 'Variant', 'จำนวน', 'ยอดขาย', 'Shopee หัก(฿)', 'Income โอน', 'ต้นทุนรวม(ชิ้นนี้)', 'Net กำไร(ออเดอร์)'];
+  const merges = [];
+  let currentRow = 1;
+
+  const rows = state.results.map(r => {
+    let feePct = '';
+    let shopeeFee = '';
+    if (r.isFirst) {
+      const sp = r.orderSellingPrice || r.orderSalePrice || 1;
+      const totalFee = Math.abs(r.commFee||0) + Math.abs(r.servFee||0) + Math.abs(r.transFee||0);
+      feePct = (totalFee / sp * 100).toFixed(2) + '%';
+      
+      const deduct = Math.abs(r.commFee||0) + Math.abs(r.servFee||0) + Math.abs(r.platFee||0) + Math.abs(r.transFee||0) + Math.abs(r.shipDeduct||0) + Math.abs(r.commAMSFee||0);
+      shopeeFee = deduct;
+
+      if (r.rowSpan > 1) {
+        const endRow = currentRow + r.rowSpan - 1;
+        // Merge columns: Order ID (0), Status (1), Payment (2), Fee % (3), Shopee Fee (9), Income (10), Net (12)
+        [0, 1, 2, 3, 9, 10, 12].forEach(col => {
+          merges.push({ s: { r: currentRow, c: col }, e: { r: endRow, c: col } });
+        });
+      }
+    }
+    
+    currentRow++;
+
+    return {
+      'Order ID': r.orderId,
+      'สถานะ': r.status,
+      'ช่องทางชำระ': r.isFirst ? (r.paymentChannel || '') : '',
+      '% หัก': feePct,
+      'SKU': r.sku,
+      'สินค้า': r.product,
+      'Variant': r.variant,
+      'จำนวน': r.qty,
+      'ยอดขาย': r.salePrice,
+      'Shopee หัก(฿)': shopeeFee,
+      'Income โอน': r.isFirst ? r.income : '',
+      'ต้นทุนรวม(ชิ้นนี้)': r.itemCostTotal,
+      'Net กำไร(ออเดอร์)': r.isFirst ? r.net : '',
+      '_isCancelled': r.isCancelled
+    };
+  });
+  
+  const cleanRows = rows.map(r => {
+    const newObj = {...r};
+    delete newObj._isCancelled;
+    return newObj;
+  });
+  
+  const ws = XLSX.utils.json_to_sheet(cleanRows, { header: headers });
+  
+  if (merges.length > 0) ws['!merges'] = merges;
+  
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  
+  // Style headers
+  for (let c = 0; c <= range.e.c; c++) {
+    const cellAddr = XLSX.utils.encode_cell({r: 0, c});
+    if (!ws[cellAddr]) continue;
+    ws[cellAddr].s = {
+      fill: { fgColor: { rgb: "F1F5F9" } },
+      font: { bold: true, color: { rgb: "334155" } },
+      alignment: { horizontal: "center", vertical: "center" }
+    };
+  }
+
+  // Style rows
+  const alignTopCols = [0, 1, 2, 3, 9, 10, 12];
+  rows.forEach((rObj, rIdx) => {
+    const rowNum = rIdx + 1;
+    for (let c = 0; c <= range.e.c; c++) {
+      const cellAddr = XLSX.utils.encode_cell({r: rowNum, c});
+      if (!ws[cellAddr]) ws[cellAddr] = { v: '', t: 's' }; // ensure cell exists
+      
+      const cell = ws[cellAddr];
+      if (!cell.s) cell.s = {};
+      
+      if (alignTopCols.includes(c)) {
+        cell.s.alignment = { vertical: "top" };
+      }
+      
+      if (rObj._isCancelled) {
+        cell.s.fill = { fgColor: { rgb: "FEF2F2" } }; // very light red
+        cell.s.font = { color: { rgb: "991B1B" } }; // dark red
+      }
+    }
+  });
+
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Orders');
+  XLSX.utils.book_append_sheet(wb, ws, 'Orders');
   XLSX.writeFile(wb, `Torque_Profit_Report_${getFormattedDateStr()}.xlsx`);
+}
+
+async function exportResultPDF() {
+  if(!state.results.length){ showWarningMessage('ไม่มีข้อมูล', 'ไม่มีข้อมูลให้ดาวน์โหลด'); return; }
+  
+  // Save current pagination
+  const originalPerPage = state.itemsPerPage;
+  const originalPage = state.currentPage;
+  
+  Swal.fire({
+    title: 'กำลังเตรียมไฟล์ PDF...',
+    html: 'ข้อมูลมีจำนวนมาก ระบบกำลังจัดการหน้ากระดาษ กรุณารอสักครู่',
+    allowOutsideClick: false,
+    didOpen: () => { Swal.showLoading(); }
+  });
+
+  // Set to show all for PDF
+  state.itemsPerPage = 99999;
+  state.currentPage = 1;
+  renderResultTable();
+  
+  // Wait for render
+  setTimeout(async () => {
+    try {
+      const tableEl = document.querySelector('#tab-result table');
+      const canvas = await html2canvas(tableEl, {
+        scale: 1.5,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff'
+      });
+      
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF('p', 'mm', 'a4');
+      
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      const imgProps = doc.getImageProperties(imgData);
+      const pdfWidth = doc.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      
+      let heightLeft = pdfHeight;
+      let position = 0;
+      const pageHeight = doc.internal.pageSize.getHeight();
+      
+      doc.addImage(imgData, 'JPEG', 0, position, pdfWidth, pdfHeight);
+      heightLeft -= pageHeight;
+      
+      while (heightLeft > 0) {
+        position = heightLeft - pdfHeight;
+        doc.addPage();
+        doc.addImage(imgData, 'JPEG', 0, position, pdfWidth, pdfHeight);
+        heightLeft -= pageHeight;
+      }
+      
+      doc.save(`Torque_Result_Report_${getFormattedDateStr()}.pdf`);
+      Swal.fire({ icon: 'success', title: 'ดาวน์โหลดสำเร็จ', timer: 2000, showConfirmButton: false });
+    } catch(e) {
+      console.error(e);
+      Swal.fire('Error', 'ไม่สามารถสร้าง PDF ได้ ลองใช้ Export Excel หรือแบ่งข้อมูลให้น้อยลง', 'error');
+    } finally {
+      // Restore pagination
+      state.itemsPerPage = originalPerPage;
+      state.currentPage = originalPage;
+      renderResultTable();
+    }
+  }, 800);
 }
 
 function exportSummary(){

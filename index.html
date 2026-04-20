@@ -10,8 +10,8 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-<!-- Excel Library -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- Excel Library with Styling Support -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 
 <!-- ApexCharts for Modern Dashboard -->
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
@@ -38,6 +38,7 @@
 
 <!-- PDF Generation -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <!-- Material Symbols for Icons -->
@@ -136,10 +137,16 @@
         </div>
       </div>
       <div class="top-bar-actions">
-        <button class="btn btn-pdf" id="btn-export-pdf" style="display:none;" onclick="exportProPDF()">
-          <span class="material-symbols-rounded">picture_as_pdf</span>
-          Export Reports
-        </button>
+        <div id="top-export-group" style="display:none; gap:8px;">
+          <button class="btn btn-pdf" onclick="exportProPDF()">
+            <span class="material-symbols-rounded">picture_as_pdf</span>
+            Export PDF
+          </button>
+          <button class="btn" style="background:var(--blue-light); color:var(--blue); border-color:var(--blue-light);" onclick="exportFullExcel()">
+            <span class="material-symbols-rounded" style="font-size:18px; margin-right:4px;">table_view</span>
+            Export Excel
+          </button>
+        </div>
         <div class="sync-indicator">
           <span id="sync-status"><span id="sync-status-dot" class="sync-dot" style="background:var(--green)"></span></span>
           <span id="sync-status-text">Cloud Protected</span>
@@ -398,7 +405,10 @@
               <button class="btn sm" onclick="filterOrders('success')">สำเร็จ</button>
             </div>
           </div>
-          <button class="btn primary sm" onclick="exportResult()">Export Excel</button>
+          <div style="display:flex; gap:8px;">
+            <button class="btn sm" style="color:var(--red); border-color:var(--red-light); background:var(--red-light);" onclick="exportResultPDF()">Export PDF</button>
+            <button class="btn primary sm" onclick="exportResult()">Export Excel</button>
+          </div>
         </div>
         
         <div style="display: flex; justify-content: space-between; margin-bottom: 12px; align-items: center;">
