@@ -712,8 +712,9 @@ async function exportResultPDF() {
 }
 
 function exportSummary(){
-  if(!state.summary.length){ showWarningMessage('ไม่มีข้อมูล', 'ไม่มีข้อมูลให้ดาวน์โหลด'); return; }
-  const rows = state.summary.map(r=>({
+  const exportData = state.currentExportSummary || state.summary;
+  if(!exportData || !exportData.length){ showWarningMessage('ไม่มีข้อมูล', 'ไม่มีข้อมูลให้ดาวน์โหลด'); return; }
+  const rows = exportData.map(r=>({
     'SKU': r.sku,
     'สินค้า/ตัวเลือก': r.title,
     'จำนวนที่ขายได้ (ชิ้น)': r.qty,
