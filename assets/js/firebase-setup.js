@@ -60,31 +60,65 @@ function resetInactivityTimer() {
 // Track Auth State changes
 firebase.auth().onAuthStateChanged((user) => {
   if (user) {
-    state.currentUser = user;
-    document.getElementById('auth-container').style.display = 'none';
-    document.getElementById('app-container').style.display = 'flex';
-    if(document.getElementById('user-email-sidebar')) {
-      document.getElementById('user-email-sidebar').innerText = user.email;
-    }
-    if(document.getElementById('sync-status-text')) {
-      document.getElementById('sync-status-text').innerText = 'ออนไลน์ซิงก์เรียบร้อยแล้ว (Cloud)';
-    }
-    if(document.getElementById('sync-status-dot')) {
-      document.getElementById('sync-status-dot').style.background = 'var(--green)';
-    }
-    initCostMap(); 
-    
-    // Start idle timer and attach listeners
-    resetInactivityTimer();
-    ['mousemove', 'mousedown', 'keydown', 'touchstart'].forEach(evt => {
-      document.addEventListener(evt, resetInactivityTimer);
-    });
+    // 1. แปลงอีเมลเพื่อใช้ไปค้นหาใน Database (เปลี่ยน . เป็น _)
+    const formattedEmail = user.email.replace(/\./g, '_');
+
+    // 2. ไปเช็คที่ Node 'admin_users' ว่ามีชื่ออีเมลนี้และเป็น true หรือไม่
+    firebase.database().ref('admin_users/' + formattedEmail).once('value')
+      .then((snapshot) => {
+        const isAdmin = snapshot.val() === true;
+
+        if (isAdmin) {
+          // ==========================================
+          // โค้ดเดิมที่จะทำงานเมื่อเป็น Admin (อนุญาตให้เข้าแอป)
+          // ==========================================
+          state.currentUser = user;
+          document.getElementById('auth-container').style.display = 'none';
+          document.getElementById('app-container').style.display = 'flex';
+          
+          if(document.getElementById('user-email-sidebar')) {
+            document.getElementById('user-email-sidebar').innerText = user.email;
+          }
+          if(document.getElementById('sync-status-text')) {
+            document.getElementById('sync-status-text').innerText = 'ออนไลน์ซิงก์เรียบร้อยแล้ว (Cloud)';
+          }
+          if(document.getElementById('sync-status-dot')) {
+            document.getElementById('sync-status-dot').style.background = 'var(--green)';
+          }
+          
+          initCostMap(); 
+          
+          // Start idle timer and attach listeners
+          resetInactivityTimer();
+          ['mousemove', 'mousedown', 'keydown', 'touchstart'].forEach(evt => {
+            document.addEventListener(evt, resetInactivityTimer);
+          });
+
+        } else {
+          // ==========================================
+          // กรณีไม่ใช่ Admin (ไม่มีชื่อ หรือค่าไม่ใช่ true)
+          // ==========================================
+          showErrorMessage('ไม่อนุญาตให้เข้าใช้', 'อีเมลนี้ไม่มีสิทธิ์เข้าถึงระบบ กรุณาติดต่อผู้ดูแลระบบ');
+          
+          // บังคับ Logout ออกไป
+          firebase.auth().signOut(); 
+        }
+      })
+      .catch((error) => {
+        console.error("Error checking admin permission:", error);
+        showErrorMessage('ข้อผิดพลาด', 'ไม่สามารถตรวจสอบสิทธิ์ได้: ' + error.message);
+        firebase.auth().signOut();
+      });
+
   } else {
+    // ==========================================
+    // โค้ดเดิมที่จะทำงานตอนยังไม่ได้ Login หรือเพิ่ง Logout
+    // ==========================================
     state.currentUser = null;
-    clearTimeout(inactivityTimer);
+    if (typeof inactivityTimer !== 'undefined') clearTimeout(inactivityTimer);
     document.getElementById('auth-container').style.display = 'flex';
     document.getElementById('app-container').style.display = 'none';
-    if(dbRef) dbRef.off(); // stop listening
+    if(typeof dbRef !== 'undefined' && dbRef) dbRef.off(); // stop listening
   }
 });
 

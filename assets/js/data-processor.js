@@ -649,3 +649,24 @@ function parseCSV(text) {
   }
   return results;
 }
+
+function saveMonthlyToFirebase() {
+  if (!state.results || state.results.length === 0) return;
+
+  // ดึงเดือนและปีจากข้อมูล (เช่น 2024-03)
+  const firstDate = state.timeSeries[0].date; // เช่น "2024-03-01"
+  const monthKey = firstDate.substring(0, 7); // จะได้ "2024-03"
+
+  const summaryData = {
+    total_gross: state.results.filter(r => r.isFirst && !r.isCancelled).reduce((s, r) => s + (r.orderSellingPrice || 0), 0),
+    total_income: state.results.filter(r => r.isFirst && !r.isCancelled).reduce((s, r) => s + (r.income || 0), 0),
+    total_net: state.results.filter(r => r.isFirst && !r.isCancelled).reduce((s, r) => s + (r.net || 0), 0),
+    total_ads: state.adsData.reduce((a, b) => a + b.adSpend, 0),
+    order_count: state.results.filter(r => r.isFirst && !r.isCancelled).length,
+    updated_at: firebase.database.ServerValue.TIMESTAMP
+  };
+
+  firebase.database().ref('monthly_summaries/' + monthKey).set(summaryData)
+    .then(() => showSuccessMessage('บันทึกสำเร็จ', 'เก็บข้อมูลสรุปของเดือน ' + monthKey + ' เรียบร้อยแล้ว'))
+    .catch(err => showErrorMessage('บันทึกไม่สำเร็จ', err.message));
+}

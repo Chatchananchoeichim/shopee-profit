@@ -181,6 +181,7 @@ async function exportProPDF() {
         head: orderHeaders,
         body: orderData,
         startY: doc.lastAutoTable.finalY + 8,
+        rowPageBreak: 'avoid',
         styles: { font: 'Sarabun', fontSize: 7, cellPadding: 1.5, lineColor: [226, 232, 240], lineWidth: 0.1 },
         headStyles: { fillColor: [249, 115, 22], textColor: [255, 255, 255], fontStyle: 'bold' },
         columnStyles: {
@@ -209,28 +210,30 @@ async function exportProPDF() {
         doc.text(`รายงานสรุปรายสินค้า (Product Summary)`, 14, 15);
       }
       
-      const summaryHeaders = [['SKU', 'สินค้า/ตัวเลือก', 'จำนวน', 'รายได้รวม', 'ต้นทุนรวม', 'กำไรสุทธิ', 'ต้นทุน/ชิ้น', 'รายได้/ชิ้น', 'กำไร/ชิ้น']];
+      const summaryHeaders = [['ชื่อสินค้า', 'ตัวเลือก', 'จำนวน', 'ต้นทุน/ชิ้น', 'ต้นทุนสุทธิ', 'รายได้/ชิ้น', 'รายได้สุทธิ', 'กำไร/ชิ้น', 'กำไรสุทธิ']];
       // Typecast everything to string here too
       const summaryData = exportSummary.map(r => [
-        String(r.sku || '-'),
-        String(r.title || '-'),
+        String(r.product || '-'),
+        String(r.variant || '-'),
         String(r.qty || 0),
-        String(Math.round(r.revenue || 0).toLocaleString()),
-        String(Math.round(r.cost || 0).toLocaleString()),
-        String(Math.round((r.revenue || 0) - (r.cost || 0)).toLocaleString()),
         String(Math.round(r.qty>0?r.cost/r.qty:0).toLocaleString()),
+        String(Math.round(r.cost || 0).toLocaleString()),
         String(Math.round(r.qty>0?r.revenue/r.qty:0).toLocaleString()),
-        String(Math.round(r.qty>0?(r.revenue-r.cost)/r.qty:0).toLocaleString())
+        String(Math.round(r.revenue || 0).toLocaleString()),
+        String(Math.round(r.qty>0?(r.revenue-r.cost)/r.qty:0).toLocaleString()),
+        String(Math.round((r.revenue || 0) - (r.cost || 0)).toLocaleString())
       ]);
 
       doc.autoTable({
         head: summaryHeaders,
         body: summaryData,
         startY: isSummaryTab ? 28 : 22,
+        rowPageBreak: 'avoid',
         styles: { font: 'Sarabun', fontSize: 8, cellPadding: 2, lineColor: [226, 232, 240], lineWidth: 0.1 },
         headStyles: { fillColor: [59, 130, 246], textColor: [255, 255, 255], fontStyle: 'bold' },
         columnStyles: {
-          1: { cellWidth: 'auto' }, // Allow product title to wrap
+          0: { cellWidth: 'auto' }, 
+          1: { cellWidth: 'auto' }, 
           2: { halign: 'center' },
           3: { halign: 'right' },
           4: { halign: 'right' },
@@ -238,6 +241,32 @@ async function exportProPDF() {
           6: { halign: 'right' },
           7: { halign: 'right' },
           8: { halign: 'right' }
+        },
+        didParseCell: function(data) {
+          if (data.section === 'body') {
+            const rawVal = data.cell.raw || '';
+            const isNegative = String(rawVal).startsWith('-');
+
+            if (data.column.index === 1) { // ตัวเลือก
+              data.cell.styles.textColor = [107, 114, 128]; // var(--text-muted)
+            }
+            if (data.column.index === 3) { // ต้นทุน/ชิ้น
+              data.cell.styles.fillColor = [197, 202, 233]; // #c5cae9
+              data.cell.styles.textColor = [20, 20, 20];
+            }
+            if (data.column.index === 5) { // รายได้/ชิ้น
+              data.cell.styles.textColor = [59, 130, 246]; // var(--blue)
+            }
+            if (data.column.index === 7) { // กำไร/ชิ้น
+              data.cell.styles.fillColor = [220, 231, 117]; // #dce775
+              data.cell.styles.textColor = isNegative ? [153, 27, 27] : [22, 101, 52];
+              data.cell.styles.fontStyle = 'bold';
+            }
+            if (data.column.index === 8) { // กำไรสุทธิ
+              data.cell.styles.textColor = isNegative ? [239, 68, 68] : [34, 197, 94];
+              data.cell.styles.fontStyle = 'bold';
+            }
+          }
         }
       });
     }
@@ -319,9 +348,10 @@ function exportFullExcel() {
     const exportSummary = state.currentExportSummary || state.summary;
     if (exportSummary && exportSummary.length > 0) {
       const summaryRows = exportSummary.map(r=>({
-        'SKU': r.sku, 'สินค้า/ตัวเลือก': r.title, 'จำนวนที่ขายได้ (ชิ้น)': r.qty, 'รายได้ประมาณ (฿)': Math.round(r.revenue),
-        'ต้นทุนรวม (฿)': Math.round(r.cost), 'เฉลี่ยต้นทุนต่อชิ้น (฿)': Math.round(r.qty>0?r.cost/r.qty:0),
-        'เฉลี่ยยอดขายต่อชิ้น (฿)': Math.round(r.qty>0?r.revenue/r.qty:0), 'เฉลี่ยกำไรต่อชิ้น (฿)': Math.round(r.qty>0?(r.revenue-r.cost)/r.qty:0)
+        'SKU': r.sku, 'สินค้า/ตัวเลือก': r.title, 'จำนวน': r.qty,
+        'ต้นทุน/ชิ้น': Math.round(r.qty>0?r.cost/r.qty:0), 'ต้นทุนสุทธิ': Math.round(r.cost),
+        'รายได้/ชิ้น': Math.round(r.qty>0?r.revenue/r.qty:0), 'รายได้สุทธิ': Math.round(r.revenue),
+        'กำไร/ชิ้น': Math.round(r.qty>0?(r.revenue-r.cost)/r.qty:0), 'กำไรสุทธิ': Math.round((r.revenue || 0) - (r.cost || 0))
       }));
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summaryRows), 'Product_Summary');
     }

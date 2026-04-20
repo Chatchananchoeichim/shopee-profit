@@ -20,8 +20,13 @@ function importCostTable(event){
              existing.cost = cost;
              if(sku) existing.sku = sku;
              if(product) existing.product = product;
+             existing.last_updated = new Date().toLocaleDateString('th-TH');
           } else {
-             state.costData.unshift({ id: Date.now() + importedCount, sku, product, variant, cost });
+             state.costData.unshift({ 
+               id: Date.now() + importedCount, 
+               sku, product, variant, cost, 
+               last_updated: new Date().toLocaleDateString('th-TH')
+             });
           }
           importedCount++;
         }
@@ -163,11 +168,15 @@ function renderCostTable(){
         </td>
       `;
     } else {
+      const lastUpdatedText = row.last_updated ? `<br><span style="font-size:10px;color:var(--text-faint);font-weight:400;">อัปเดต: ${row.last_updated}</span>` : '';
+      
       tr.innerHTML = `
         <td style="color:var(--blue);cursor:pointer;font-weight:500" ondblclick="editCost(${row.id})">${row.sku || '—'}</td>
         <td style="cursor:pointer" ondblclick="editCost(${row.id})">${row.product || '—'}</td>
         <td style="cursor:pointer" ondblclick="editCost(${row.id})"><strong>${row.variant || '(ทุก variant)'}</strong></td>
-        <td style="text-align:right;font-weight:600;cursor:pointer" ondblclick="editCost(${row.id})">฿${row.cost.toLocaleString()}</td>
+        <td style="text-align:right;font-weight:600;cursor:pointer" ondblclick="editCost(${row.id})">
+            ฿${row.cost.toLocaleString()}
+            ${lastUpdatedText} </td>
         <td style="display:flex;gap:12px;justify-content:flex-end">
           <button onclick="editCost(${row.id})" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:16px" title="แก้ไข">✎</button>
           <button onclick="duplicateCost(${row.id})" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:16px" title="คัดลอก (Duplicate)">⧉</button>
@@ -302,6 +311,7 @@ function saveCost(id){
     row.product = p;
     row.variant = v;
     row.cost = c;
+    row.last_updated = new Date().toLocaleDateString('th-TH');
     saveCostsToLocal();
     showSuccessMessage('บันทึกสำเร็จ', 'แก้ไขข้อมูลต้นทุนเรียบร้อยแล้วครับ');
   }
@@ -398,7 +408,8 @@ function addCostRow(){
     cancelButtonText: 'ยกเลิก'
   }).then((result) => {
     if(result.isConfirmed) {
-      state.costData.unshift({ id: Date.now(), sku: s, product: p, variant: v, cost: c });
+      const currentDate = new Date().toLocaleDateString('th-TH');
+      state.costData.unshift({ id: Date.now(), sku: s, product: p, variant: v, cost: c, last_updated: currentDate });
       saveCostsToLocal();
       document.getElementById('new-sku').value='';
       document.getElementById('new-product').value='';

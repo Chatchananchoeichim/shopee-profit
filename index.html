@@ -138,6 +138,9 @@
       </div>
       <div class="top-bar-actions">
         <div id="top-export-group" style="display:none; gap:8px;">
+          <button class="btn primary" onclick="saveMonthlyToFirebase()">
+            <span class="material-symbols-rounded">save</span> บันทึกสรุปรายเดือน
+          </button>
           <button class="btn" style="background:#ef4444; color:#fff; border:none;" onclick="exportProPDF()">
             <span class="material-symbols-rounded" style="font-size:18px; margin-right:4px;">picture_as_pdf</span>
             Export PDF
@@ -491,12 +494,13 @@
                 <th class="sortable" onclick="sortTable('summary','sku')" id="summary-th-sku">SKU <span class="sort-icon">⇅</span></th>
                 <th class="sortable" onclick="sortTable('summary','product')" id="summary-th-product">ชื่อสินค้า <span class="sort-icon">⇅</span></th>
                 <th class="sortable" onclick="sortTable('summary','title')" id="summary-th-title">ตัวเลือก <span class="sort-icon">⇅</span></th>
-                <th class="sortable" onclick="sortTable('summary','qty')" id="summary-th-qty" style="text-align:right">ขายได้(ชิ้น) <span class="sort-icon">⇅</span></th>
-                <th class="sortable" onclick="sortTable('summary','revenue')" id="summary-th-revenue" style="text-align:right">ยอดรับจริงรวม <span class="sort-icon">⇅</span></th>
-                <th class="sortable" onclick="sortTable('summary','cost')" id="summary-th-cost" style="text-align:right">ต้นทุนรวม <span class="sort-icon">⇅</span></th>
-                <th style="text-align:right">ต้นทุนเฉลี่ย/ชิ้น</th>
-                <th style="text-align:right">รับจริงเฉลี่ย/ชิ้น</th>
-                <th class="sortable" onclick="sortTable('summary','profit')" id="summary-th-profit" style="text-align:right">กำไรเฉลี่ย/ชิ้น <span class="sort-icon">⇅</span></th>
+                <th class="sortable" onclick="sortTable('summary','qty')" id="summary-th-qty" style="text-align:right">จำนวน <span class="sort-icon">⇅</span></th>
+                <th style="text-align:right; background-color:#c5cae9;">ต้นทุน/ชิ้น</th>
+                <th class="sortable" onclick="sortTable('summary','cost')" id="summary-th-cost" style="text-align:right">ต้นทุนสุทธิ <span class="sort-icon">⇅</span></th>
+                <th style="text-align:right">รายได้/ชิ้น</th>
+                <th class="sortable" onclick="sortTable('summary','revenue')" id="summary-th-revenue" style="text-align:right">รายได้สุทธิ <span class="sort-icon">⇅</span></th>
+                <th class="sortable" onclick="sortTable('summary','profit')" id="summary-th-profit" style="text-align:right; background-color:#dce775;">กำไร/ชิ้น <span class="sort-icon">⇅</span></th>
+                <th style="text-align:right">กำไรสุทธิ</th>
               </tr>
             </thead>
             <tbody id="summary-tbody"></tbody>

@@ -367,7 +367,7 @@ function renderSummaryTable(){
 
   if (pageData.length === 0) {
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td colspan="8" style="text-align:center; padding:32px; color:var(--text-muted); font-size: 14px; background:#fbfbfb;">🔍 ไม่พบข้อมูลที่ค้นหา</td>`;
+    tr.innerHTML = `<td colspan="10" style="text-align:center; padding:32px; color:var(--text-muted); font-size: 14px; background:#fbfbfb;">🔍 ไม่พบข้อมูลที่ค้นหา</td>`;
     tbody.appendChild(tr);
   }
 
@@ -375,6 +375,7 @@ function renderSummaryTable(){
     const avgRev = r.qty > 0 ? r.revenue / r.qty : 0;
     const avgCost = r.qty > 0 ? r.cost / r.qty : 0;
     const avgNet = avgRev - avgCost;
+    const totalNet = r.revenue - r.cost;
     
     const tr = document.createElement('tr');
     tr.innerHTML = `
@@ -382,11 +383,12 @@ function renderSummaryTable(){
       <td style="font-size:13px;font-weight:500;">${r.product}</td>
       <td style="font-size:12px;color:var(--text-muted);">${r.variant || '-'}</td>
       <td style="text-align:right;font-weight:600">${r.qty}</td>
-      <td style="text-align:right">฿${Math.round(r.revenue).toLocaleString()}</td>
+      <td style="text-align:right;background-color:#c5cae9;color:var(--text-main);font-weight:500;">฿${Math.round(avgCost).toLocaleString()}</td>
       <td style="text-align:right">฿${Math.round(r.cost).toLocaleString()}</td>
-      <td style="text-align:right;color:var(--text-muted)">฿${Math.round(avgCost).toLocaleString()}</td>
       <td style="text-align:right;color:var(--blue);font-weight:500">฿${Math.round(avgRev).toLocaleString()}</td>
-      <td style="text-align:right;font-weight:600;color:${avgNet>=0?'var(--green)':'var(--red)'}">฿${Math.round(avgNet).toLocaleString()}</td>
+      <td style="text-align:right">฿${Math.round(r.revenue).toLocaleString()}</td>
+      <td style="text-align:right;font-weight:600;background-color:#dce775;color:${avgNet>=0?'#166534':'#991b1b'}">฿${Math.round(avgNet).toLocaleString()}</td>
+      <td style="text-align:right;font-weight:600;color:${totalNet>=0?'var(--green)':'var(--red)'}">฿${Math.round(totalNet).toLocaleString()}</td>
     `;
     tbody.appendChild(tr);
   });
