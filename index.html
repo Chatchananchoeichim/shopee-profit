@@ -396,7 +396,7 @@
       </div>
 
       <div class="card">
-        <div class="flex-between" style="margin-bottom:16px">
+        <div class="flex-between" style="margin-bottom:16px; align-items:flex-end;">
           <div>
             <h3 style="margin-bottom:8px;">รายการแยกตามออเดอร์</h3>
             <div class="flex-gap">
@@ -404,14 +404,6 @@
               <button class="btn sm" onclick="filterOrders('no-cost')">ขาด Cost</button>
               <button class="btn sm" onclick="filterOrders('success')">สำเร็จ</button>
             </div>
-          </div>
-          <div style="display:flex; gap:8px;">
-            <button class="btn sm" style="background:#ef4444; color:#fff; border:none;" onclick="exportProPDF()">
-              <span class="material-symbols-rounded" style="font-size:16px;vertical-align:middle;margin-right:4px;">picture_as_pdf</span>Export PDF
-            </button>
-            <button class="btn sm" style="background:#10b981; color:#fff; border:none;" onclick="exportFullExcel()">
-              <span class="material-symbols-rounded" style="font-size:16px;vertical-align:middle;margin-right:4px;">table_view</span>Export Excel
-            </button>
           </div>
         </div>
         
@@ -468,14 +460,6 @@
       <div class="card">
         <div class="flex-between" style="margin-bottom:16px">
           <h3>สรุปยอดขายแยกรายสินค้า (สรุปวิเคราะห์)</h3>
-          <div style="display: flex; gap: 8px;">
-            <button class="btn sm" style="background:#ef4444; color:#fff; border:none;" onclick="exportProPDF()">
-              <span class="material-symbols-rounded" style="font-size:16px;vertical-align:middle;margin-right:4px;">picture_as_pdf</span>Export PDF
-            </button>
-            <button class="btn sm" style="background:#10b981; color:#fff; border:none;" onclick="exportSummary()">
-              <span class="material-symbols-rounded" style="font-size:16px;vertical-align:middle;margin-right:4px;">table_view</span>Export Excel
-            </button>
-          </div>
         </div>
         <div class="alert info">รายงานนี้เกลี่ยรายได้จากออเดอร์ เข้ากับจำนวนชิ้นที่ขายได้ในออเดอร์นั้นๆ เพื่อแสดงยอดขายเฉลี่ย/ชิ้นอย่างแม่นยำ</div>
         
