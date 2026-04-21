@@ -56,7 +56,13 @@
     <p>ระบบรักษาความปลอดภัยฐานข้อมูลต้นทุน Torque</p>
     <input type="email" id="auth-email" placeholder="อีเมล (Email)">
     <input type="password" id="auth-pass" placeholder="รหัสผ่าน (Password)" onkeyup="if(event.key==='Enter') login()">
-    <button class="btn primary" id="login-btn" onclick="login()" style="width: 100%; padding: 12px; margin-top: 8px;">เข้าสู่ระบบฐานข้อมูล</button>
+    <button id="login-btn" class="btn primary" style="width:100%" onclick="login()">เข้าสู่ระบบ</button>
+
+    <div style="text-align: center; margin: 15px 0; color: var(--text-muted); font-size: 12px;">หรือ</div>
+    <button id="google-login-btn" class="btn" style="width:100%; background: #ffffff; color: #333; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; gap: 10px;" onclick="loginWithGoogle()">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" style="width: 18px;" alt="Google">
+      เข้าสู่ระบบด้วยบัญชี Google
+    </button>
   </div>
 </div>
 
