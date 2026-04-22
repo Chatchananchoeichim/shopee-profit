@@ -118,6 +118,61 @@
     </nav>
 
     <div class="sidebar-footer">
+      <!-- Shop Room Switcher: แสดงเฉพาะ super_admin -->
+      <div id="shop-room-switcher" style="display:none; margin-bottom: 12px;">
+        <div style="
+          background: rgba(255,255,255,0.05);
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 12px;
+          padding: 10px 12px;
+        ">
+          <!-- Header Label -->
+          <div style="display:flex; align-items:center; gap:6px; margin-bottom:8px;">
+            <span class="material-symbols-rounded" style="font-size:14px; color: #f97316;">store</span>
+            <span style="font-size:10px; font-weight:700; color:#94a3b8; letter-spacing:0.8px; text-transform:uppercase;">ห้องข้อมูล</span>
+            <span style="
+              margin-left:auto;
+              background: rgba(249,115,22,0.2);
+              color: #f97316;
+              font-size:9px;
+              font-weight:800;
+              padding: 2px 7px;
+              border-radius: 20px;
+              letter-spacing:0.5px;
+              text-transform:uppercase;
+            ">SUPER ADMIN</span>
+          </div>
+          <!-- Custom Select Wrapper -->
+          <div style="position:relative;">
+            <select id="shop-room-select" onchange="switchShopRoom(this.value)" style="
+              width: 100%;
+              padding: 8px 32px 8px 10px;
+              border-radius: 8px;
+              border: 1px solid rgba(249,115,22,0.4);
+              background: rgba(249,115,22,0.1);
+              color: #fff;
+              font-size: 12px;
+              font-weight: 700;
+              font-family: inherit;
+              cursor: pointer;
+              appearance: none;
+              -webkit-appearance: none;
+              outline: none;
+              transition: all 0.2s;
+            ">
+              <option value="shopee_cost_data"  style="background:#1e293b; color:#fff;">🛒 Shopee Cost Master</option>
+              <option value="torque_cost_data"  style="background:#1e293b; color:#fff;">🏍️ Torque Cost Data</option>
+              <option value="ggs_cost_data"     style="background:#1e293b; color:#fff;">🎯 GGS Cost Data</option>
+            </select>
+            <!-- Dropdown Arrow Icon -->
+            <span class="material-symbols-rounded" style="
+              position:absolute; right:8px; top:50%; transform:translateY(-50%);
+              font-size:16px; color:#f97316; pointer-events:none;
+            ">expand_more</span>
+          </div>
+        </div>
+      </div>
+
       <div class="user-pill">
         <div class="user-avatar" id="user-initials">?</div>
         <div class="user-meta">
@@ -633,7 +688,11 @@
       <!-- KPI Box -->
       <div class="grid4" style="margin-bottom:16px">
         <div class="metric"><div class="label">Margin รวมภาพรวม (%)</div><div class="value green" id="d-margin">-</div></div>
-        <div class="metric" title="สินค้าขายดี+กำไรสูง ตาม BCG Matrix"><div class="label">สินค้ากลุ่ม Star 🌟</div><div class="value" id="d-star-count">-</div></div>
+        <div class="metric clickable" onclick="showStarList()" title="คลิกเพื่อดูรายชื่อสินค้ากลุ่ม Star" style="cursor:pointer; transition: transform 0.2s; position:relative;">
+          <div class="label">สินค้ากลุ่ม Star 🌟</div>
+          <div class="value" id="d-star-count">-</div>
+          <div style="font-size:10px; color:var(--primary); font-weight:600; margin-top:4px;">คลิกเพื่อดูรายชื่อ →</div>
+        </div>
         <div class="metric"><div class="label">สินค้าทำกำไร (SKUs)</div><div class="value blue" id="d-profit-skus">-</div></div>
         <div class="metric"><div class="label">สินค้าขาดทุน (SKUs)</div><div class="value red" id="d-loss-skus">-</div></div>
       </div>
