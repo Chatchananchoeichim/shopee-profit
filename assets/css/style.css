@@ -1175,3 +1175,103 @@ td input {
   border-color: var(--primary) !important;
   box-shadow: 0 0 0 4px var(--primary-light) !important;
 }
+
+/* --- Modern SweetAlert2 Customization --- */
+.swal2-modern-popup {
+    border-radius: 20px !important;
+    padding: 2.5rem 2rem !important;
+    background: #ffffff !important; /* บังคับเป็นสีขาว */
+    border: none !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.2) !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+}
+
+.swal2-modern-title {
+    font-weight: 700 !important;
+    font-size: 24px !important;
+    color: #1e293b !important; /* สีเข้มสำหรับพื้นขาว */
+    margin-bottom: 4px !important;
+    letter-spacing: -0.5px;
+}
+
+.swal2-modern-input {
+    border-radius: 12px !important;
+    border: 1px solid #e2e8f0 !important;
+    background: #f8fafc !important;
+    padding: 14px 18px !important;
+    font-size: 15px !important;
+    color: #1e293b !important;
+    transition: all 0.2s ease !important;
+    margin: 20px auto 10px !important;
+    width: 90% !important;
+}
+
+.swal2-modern-input:focus {
+    border-color: #f97316 !important;
+    background: #ffffff !important;
+    box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.1) !important;
+}
+
+.swal2-actions-modern {
+    margin-top: 24px !important;
+    gap: 12px !important;
+    width: 100% !important;
+}
+
+.swal2-confirm-modern {
+    background: #f97316 !important;
+    color: #fff !important;
+    border-radius: 10px !important;
+    padding: 12px 0 !important;
+    font-weight: 700 !important;
+    font-size: 14px !important;
+    min-width: 140px !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.2) !important;
+}
+
+.swal2-confirm-modern:hover {
+    filter: brightness(1.05);
+    transform: translateY(-1px);
+}
+
+.swal2-cancel-modern {
+    background: #f1f5f9 !important;
+    color: #64748b !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 10px !important;
+    padding: 12px 0 !important;
+    font-weight: 600 !important;
+    font-size: 14px !important;
+    min-width: 110px !important;
+    transition: all 0.2s ease !important;
+}
+
+.swal2-cancel-modern:hover {
+    background: #e2e8f0 !important;
+    color: #1e293b !important;
+}
+
+/* Add Room Button (Super Admin) */
+.btn-add-room {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  opacity: 0.7;
+}
+
+.btn-add-room:hover {
+  background: rgba(249, 115, 22, 0.15);
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.btn-add-room:active {
+  transform: scale(0.9);
+}
