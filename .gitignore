@@ -1,5 +1,6 @@
 .DS_Store
 *.csv
 *.xlsx
-assets/js/*.js
 *.png
+assets/js/*.js
+*.md

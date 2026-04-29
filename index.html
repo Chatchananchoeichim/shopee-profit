@@ -477,6 +477,7 @@
             <div class="flex-gap">
               <button class="btn sm" onclick="filterOrders('all')">ทั้งหมด</button>
               <button class="btn sm" onclick="filterOrders('no-cost')">ขาด Cost</button>
+              <button class="btn sm" onclick="filterOrders('no-income')">รอ Income</button>
               <button class="btn sm" onclick="filterOrders('success')">สำเร็จ</button>
             </div>
           </div>
@@ -951,6 +952,7 @@
 </div>
 
 <!-- External Javascript Logics -->
+<!-- Load readable source files in dependency order. Keep assets/obfuscated-js as a legacy build artifact only. -->
 <!-- <script src="assets/js/state.js"></script>
 <script src="assets/js/utils.js"></script>
 <script src="assets/js/firebase-setup.js"></script>
