@@ -123,6 +123,10 @@
         <span class="material-symbols-rounded">dashboard</span>
         <span>Dashboard Insights</span>
       </button>
+      <button class="nav-item" onclick="switchTab('history')" title="รายงานย้อนหลัง">
+        <span class="material-symbols-rounded">history</span>
+        <span>รายงานย้อนหลัง</span>
+      </button>
     </nav>
 
     <div class="sidebar-footer">
@@ -931,6 +935,57 @@
         </div>
       </div>
 
+    </div>
+  </div>
+
+  <!-- TAB 7 HISTORY -->
+  <div id="tab-history" class="tab-content">
+    <div class="flex-between" style="margin-bottom: 16px;">
+      <div>
+        <h2 style="margin: 0; padding-bottom: 4px;">รายงานภาพรวม (History)</h2>
+        <p class="sub" style="margin: 0;">สรุปผลประกอบการย้อนหลังรายเดือนและรายปี</p>
+      </div>
+      <button class="btn primary outline" onclick="fetchAndRenderHistory()">รีเฟรชข้อมูล ↻</button>
+    </div>
+    
+    <div id="history-content">
+      <!-- Yearly Overview -->
+      <div class="grid4" style="margin-bottom: 24px;">
+        <div class="card metric" style="padding:16px"><p class="label">ยอดขายรวม (ปี)</p><div class="value amber" id="h-total-gross">-</div></div>
+        <div class="card metric" style="padding:16px"><p class="label">รายรับรวม (ปี)</p><div class="value blue" id="h-total-income">-</div></div>
+        <div class="card metric" style="padding:16px"><p class="label">กำไรสุทธิ (ปี)</p><div class="value green" id="h-total-net">-</div></div>
+        <div class="card metric" style="padding:16px"><p class="label">Profit Margin เฉลี่ย</p><div class="value" id="h-avg-margin">-</div></div>
+      </div>
+      
+      <!-- Chart -->
+      <div class="card" style="margin-bottom:24px;">
+        <h3 style="margin-bottom: 16px;">กราฟเปรียบเทียบ รายรับ vs กำไรสุทธิ (รายเดือน)</h3>
+        <div style="height: 350px;" id="historyTrendChart"></div>
+      </div>
+      
+      <!-- Table -->
+      <div class="card">
+        <h3 style="margin-bottom: 16px;">ตารางสรุปแต่ละเดือน</h3>
+        <div class="scroll-x">
+          <table class="report-table" style="font-size: 13px; width: 100%; border-collapse: collapse;">
+            <thead>
+              <tr style="border-bottom:1px solid var(--border)">
+                <th style="text-align:left; padding:12px 8px; font-size:13px; color:var(--text-muted)">เดือน/ปี</th>
+                <th style="text-align:right; padding:12px 8px; font-size:13px; color:var(--text-muted)">จำนวนออเดอร์</th>
+                <th style="text-align:right; padding:12px 8px; font-size:13px; color:var(--text-muted)">ยอดขาย (Gross)</th>
+                <th style="text-align:right; padding:12px 8px; font-size:13px; color:var(--text-muted)">รายรับ (Income)</th>
+                <th style="text-align:right; padding:12px 8px; font-size:13px; color:var(--text-muted)">ค่าโฆษณา</th>
+                <th style="text-align:right; padding:12px 8px; font-size:13px; color:var(--text-muted)">ค่าธรรมเนียมรวม</th>
+                <th style="text-align:right; padding:12px 8px; font-size:13px; color:var(--text-muted)">กำไรสุทธิ (Net)</th>
+                <th style="text-align:right; padding:12px 8px; font-size:13px; color:var(--text-muted)">Margin (%)</th>
+              </tr>
+            </thead>
+            <tbody id="history-table-body">
+              <tr><td colspan="8" style="text-align:center; padding:24px; color:var(--text-faint)">กำลังดึงข้อมูล...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 
