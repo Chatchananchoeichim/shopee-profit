@@ -267,9 +267,17 @@
           <p style="font-size:12px;color:var(--text-muted);margin-bottom:8px;font-weight:600">ไฟล์ Shopee Ads (ข้อมูล-Shopee-Ads-*.csv) <span style="color:var(--blue)">(ตัวเลือก - ไม่บังคับ)</span></p>
           <div class="upload-area" id="drop-ads" onclick="document.getElementById('file-ads').click()">
             <div class="icon">📈</div>
-            <p id="ads-label">เลือกไฟล์โฆษณา (CSV)</p>
+            <p id="ads-label">เลือกไฟล์สรุปโฆษณา (CSV)</p>
           </div>
           <input type="file" id="file-ads" accept=".csv" onchange="handleAdsFile(this)">
+        </div>
+        <div>
+          <p style="font-size:12px;color:var(--text-muted);margin-bottom:8px;font-weight:600">ไฟล์บิล Ads (torquetorque_adwords_bill_*.csv) <span style="color:var(--blue)">(ตัวเลือก - คำนวณค่าโฆษณารายวัน)</span></p>
+          <div class="upload-area" id="drop-ads-bill" onclick="document.getElementById('file-ads-bill').click()">
+            <div class="icon">🧾</div>
+            <p id="ads-bill-label">เลือกไฟล์บิลค่าโฆษณารายวัน (CSV)</p>
+          </div>
+          <input type="file" id="file-ads-bill" accept=".csv" onchange="handleAdsBillFile(this)">
         </div>
         <div>
           <p style="font-size:12px;color:var(--text-muted);margin-bottom:8px;font-weight:600">ไฟล์ Shop Stats (Shop_Performance_*.xlsx) <span style="color:var(--blue)">(ตัวเลือก - ไม่บังคับ)</span></p>
@@ -907,7 +915,9 @@
                             <th class="text-right">Orders</th>
                             <th class="text-right">ยอดขาย (Gross)</th>
                             <th class="text-right">รายรับ (Income)</th>
-                            <th class="text-right">กำไร (Profit)</th>
+                            <th class="text-right">Gross-Profit</th>
+                            <th class="text-right">ค่า Ads</th>
+                            <th class="text-right">Net-Profit</th>
                             <th class="text-right">Margin</th>
                         </tr>
                     </thead>
@@ -1031,5 +1041,6 @@
 <script src="assets/obfuscated-js/ui-module.js"></script>
 <script src="assets/obfuscated-js/dashboard.js"></script>
 <script src="assets/obfuscated-js/main.js"></script>
+<script src="assets/js/ads-integration.js"></script>
 </body>
 </html>
