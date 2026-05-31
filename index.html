@@ -248,23 +248,25 @@
   <div id="tab-import" class="tab-content active">
     <div class="card">
       <h3>อัพโหลดไฟล์จาก Shopee Seller Center</h3>
-      <p class="sub">โหลดไฟล์ 2 ไฟล์ทุกเดือน — ไม่ต้องแก้ไขอะไรก่อนอัพโหลด</p>
+      <p class="sub">โหลดไฟล์ Order และ Income ได้ <b>หลายไฟล์/หลายเดือน</b> ระบบจะรวมข้อมูลให้อัตโนมัติ — ไม่ต้องแก้ไขอะไรก่อนอัพโหลด</p>
       <div class="grid2" style="margin-bottom:16px">
         <div>
-          <p style="font-size:12px;color:var(--text-muted);margin-bottom:8px;font-weight:600">ไฟล์ Order (Order_all_*.xlsx) <span style="color:var(--red)">(จำเป็น)</span></p>
+          <p style="font-size:12px;color:var(--text-muted);margin-bottom:8px;font-weight:600">ไฟล์ Order (Order_all_*.xlsx) <span style="color:var(--red)">(จำเป็น · เลือกได้หลายไฟล์)</span></p>
           <div class="upload-area" id="drop-order" onclick="document.getElementById('file-order').click()">
             <div class="icon">📦</div>
             <p id="order-label">คลิกเพื่อเลือกไฟล์ หรือลากมาวาง</p>
           </div>
-          <input type="file" id="file-order" accept=".xlsx,.xls" onchange="handleFile(this,'order')">
+          <input type="file" id="file-order" accept=".xlsx,.xls" multiple onchange="handleFile(this,'order')">
+          <div id="order-file-list"></div>
         </div>
         <div>
-          <p style="font-size:12px;color:var(--text-muted);margin-bottom:8px;font-weight:600">ไฟล์ Income (Income_*.xlsx) <span style="color:var(--red)">(จำเป็น)</span></p>
+          <p style="font-size:12px;color:var(--text-muted);margin-bottom:8px;font-weight:600">ไฟล์ Income (Income_*.xlsx) <span style="color:var(--red)">(จำเป็น · เลือกได้หลายไฟล์)</span></p>
           <div class="upload-area" id="drop-income" onclick="document.getElementById('file-income').click()">
             <div class="icon">💰</div>
             <p id="income-label">คลิกเพื่อเลือกไฟล์ หรือลากมาวาง</p>
           </div>
-          <input type="file" id="file-income" accept=".xlsx,.xls" onchange="handleFile(this,'income')">
+          <input type="file" id="file-income" accept=".xlsx,.xls" multiple onchange="handleFile(this,'income')">
+          <div id="income-file-list"></div>
         </div>
         <div>
           <p style="font-size:12px;color:var(--text-muted);margin-bottom:8px;font-weight:600">ไฟล์ Shopee Ads (ข้อมูล-Shopee-Ads-*.csv) <span style="color:var(--blue)">(ตัวเลือก - ไม่บังคับ)</span></p>
@@ -697,12 +699,12 @@
                 <th class="sortable" onclick="sortTable('summary','product')" id="summary-th-product">ชื่อสินค้า <span class="sort-icon">⇅</span></th>
                 <th class="sortable" onclick="sortTable('summary','title')" id="summary-th-title">ตัวเลือก <span class="sort-icon">⇅</span></th>
                 <th class="sortable" onclick="sortTable('summary','qty')" id="summary-th-qty" style="text-align:right">จำนวน <span class="sort-icon">⇅</span></th>
-                <th style="text-align:right; background-color:#c5cae9;">ต้นทุน/ชิ้น</th>
+                <th class="sortable" onclick="sortTable('summary','costPerUnit')" id="summary-th-costPerUnit" style="text-align:right; background-color:#c5cae9;">ต้นทุน/ชิ้น <span class="sort-icon">⇅</span></th>
                 <th class="sortable" onclick="sortTable('summary','cost')" id="summary-th-cost" style="text-align:right">ต้นทุนสุทธิ <span class="sort-icon">⇅</span></th>
-                <th style="text-align:right">รายได้/ชิ้น</th>
+                <th class="sortable" onclick="sortTable('summary','revPerUnit')" id="summary-th-revPerUnit" style="text-align:right">รายได้/ชิ้น <span class="sort-icon">⇅</span></th>
                 <th class="sortable" onclick="sortTable('summary','revenue')" id="summary-th-revenue" style="text-align:right">รายได้สุทธิ <span class="sort-icon">⇅</span></th>
                 <th class="sortable" onclick="sortTable('summary','profit')" id="summary-th-profit" style="text-align:right; background-color:#dce775;">กำไร/ชิ้น <span class="sort-icon">⇅</span></th>
-                <th style="text-align:right">กำไรสุทธิ</th>
+                <th class="sortable" onclick="sortTable('summary','netProfit')" id="summary-th-netProfit" style="text-align:right">กำไรสุทธิ <span class="sort-icon">⇅</span></th>
               </tr>
             </thead>
             <tbody id="summary-tbody"></tbody>
@@ -886,18 +888,22 @@
           <div class="metric"><div class="label">หมายเหตุ</div><div style="font-size:12px; color:var(--text-muted); margin-top:6px; line-height:1.5;">ใช้ที่อยู่จัดส่งจากไฟล์ Order<br/>(คอลัมน์จังหวัด/อำเภอ)</div></div>
         </div>
 
-        <!-- สรุปรายภูมิภาค -->
-        <div style="margin-bottom:20px;">
-          <h3 style="margin-bottom:10px; font-size:14px;">สรุปรายภูมิภาค (Regional Summary)</h3>
-          <div id="loc-region-summary" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(190px, 1fr)); gap:12px;">
-            <div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--text-faint)">รอการคำนวณข้อมูล...</div>
-          </div>
-        </div>
-
-        <!-- แผนที่ประเทศไทย (เต็มความกว้าง) -->
+        <!-- แผนที่ + สรุปรายภูมิภาค (รวมในการ์ดเดียว) -->
         <div class="card" style="margin-bottom:16px;">
-          <h3 style="margin-bottom:4px; font-size:14px;">แผนที่ความหนาแน่นลูกค้ารายจังหวัด</h3>
-          <p class="sub" style="margin-bottom:8px; font-size:12px;">เฉดสีเข้ม = ออเดอร์น้อย, เฉดสีเหลือง = ออเดอร์มาก (โทนสีเป็นมิตรกับผู้มีภาวะตาบอดสี) — ชี้เมาส์ที่จังหวัดเพื่อดูรายละเอียด</p>
+          <div class="flex-between" style="margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+            <div>
+              <h3 style="margin-bottom:4px; font-size:14px;">แผนที่ความหนาแน่นลูกค้ารายจังหวัด</h3>
+              <p class="sub" style="margin:0; font-size:12px;">เฉดสีเข้ม = ออเดอร์น้อย, เหลือง = มาก · เลื่อนล้อเมาส์เพื่อซูม / ลากเพื่อเลื่อน · คลิกการ์ดภูมิภาคเพื่อกรองเฉพาะภาคนั้น</p>
+            </div>
+            <button type="button" id="loc-region-reset" onclick="toggleLocationRegion(null)" class="btn sm" style="display:none; align-self:center;">↺ ดูทุกภาค</button>
+          </div>
+
+          <!-- สรุปรายภูมิภาค (คลิกเพื่อกรองแผนที่/ตาราง) -->
+          <div style="font-size:13px; font-weight:700; margin-bottom:8px; color:var(--text)">สรุปรายภูมิภาค (Regional Summary) <span style="font-weight:400; color:var(--text-muted); font-size:11px;">— คลิกเพื่อกรอง</span></div>
+          <div id="loc-region-summary" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:10px; margin-bottom:14px;">
+            <div style="grid-column:1/-1; text-align:center; padding:16px; color:var(--text-faint)">รอการคำนวณข้อมูล...</div>
+          </div>
+
           <div style="height:560px; position:relative;" id="locationThailandMap"></div>
         </div>
 
@@ -912,13 +918,13 @@
           <table style="width:100%; border-collapse:collapse;">
             <thead>
               <tr style="border-bottom:1px solid var(--border)">
-                <th style="text-align:left; padding:12px 8px; font-size:13px; color:var(--text-muted)">จังหวัด</th>
-                <th style="text-align:left; padding:12px 8px; font-size:13px; color:var(--text-muted)">ภาค</th>
-                <th style="text-align:center; padding:12px 8px; font-size:13px; color:var(--text-muted)">ออเดอร์</th>
-                <th style="text-align:center; padding:12px 8px; font-size:13px; color:var(--text-muted)">จำนวนชิ้น</th>
-                <th style="text-align:right; padding:12px 8px; font-size:13px; color:var(--text-muted)">ยอดรายรับ (Income)</th>
-                <th style="text-align:right; padding:12px 8px; font-size:13px; color:var(--text-muted)">เฉลี่ย/ออเดอร์</th>
-                <th style="text-align:right; padding:12px 8px; font-size:13px; color:var(--text-muted)">% ยอดขาย</th>
+                <th class="sortable" onclick="sortTable('location','province')" id="location-th-province" style="text-align:left; padding:12px 8px; font-size:13px; color:var(--text-muted)">จังหวัด <span class="sort-icon">⇅</span></th>
+                <th class="sortable" onclick="sortTable('location','region')" id="location-th-region" style="text-align:left; padding:12px 8px; font-size:13px; color:var(--text-muted)">ภาค <span class="sort-icon">⇅</span></th>
+                <th class="sortable" onclick="sortTable('location','orders')" id="location-th-orders" style="text-align:center; padding:12px 8px; font-size:13px; color:var(--text-muted)">ออเดอร์ <span class="sort-icon">⇅</span></th>
+                <th class="sortable" onclick="sortTable('location','qty')" id="location-th-qty" style="text-align:center; padding:12px 8px; font-size:13px; color:var(--text-muted)">จำนวนชิ้น <span class="sort-icon">⇅</span></th>
+                <th class="sortable" onclick="sortTable('location','revenue')" id="location-th-revenue" style="text-align:right; padding:12px 8px; font-size:13px; color:var(--text-muted)">ยอดรายรับ (Income) <span class="sort-icon">⇅</span></th>
+                <th class="sortable" onclick="sortTable('location','avg')" id="location-th-avg" style="text-align:right; padding:12px 8px; font-size:13px; color:var(--text-muted)">เฉลี่ย/ออเดอร์ <span class="sort-icon">⇅</span></th>
+                <th class="sortable" onclick="sortTable('location','pct')" id="location-th-pct" style="text-align:right; padding:12px 8px; font-size:13px; color:var(--text-muted)">% ยอดขาย <span class="sort-icon">⇅</span></th>
               </tr>
             </thead>
             <tbody id="loc-province-tbody">
@@ -973,16 +979,14 @@
                 <table class="report-table" style="font-size: 13px;">
                     <thead>
                         <tr>
-                            <th>วันที่</th>
-                            <th class="text-right">Visitors</th>
-                            <th class="text-right">CR (%)</th>
-                            <th class="text-right">Orders</th>
-                            <th class="text-right">ยอดขาย (Gross)</th>
-                            <th class="text-right">รายรับ (Income)</th>
-                            <th class="text-right">Gross-Profit</th>
-                            <th class="text-right">Margin</th>
-                            <th class="text-right">ค่า Ads</th>
-                            <th class="text-right">Net-Profit</th>
+                            <th class="sortable" onclick="sortTable('daily','date')" id="daily-th-date">วันที่ <span class="sort-icon">⇅</span></th>
+                            <th class="sortable text-right" onclick="sortTable('daily','visitors')" id="daily-th-visitors">Visitors <span class="sort-icon">⇅</span></th>
+                            <th class="sortable text-right" onclick="sortTable('daily','cr')" id="daily-th-cr">CR (%) <span class="sort-icon">⇅</span></th>
+                            <th class="sortable text-right" onclick="sortTable('daily','orders')" id="daily-th-orders">Orders <span class="sort-icon">⇅</span></th>
+                            <th class="sortable text-right" onclick="sortTable('daily','gross')" id="daily-th-gross">ยอดขาย (Gross) <span class="sort-icon">⇅</span></th>
+                            <th class="sortable text-right" onclick="sortTable('daily','income')" id="daily-th-income">รายรับ (Income) <span class="sort-icon">⇅</span></th>
+                            <th class="sortable text-right" onclick="sortTable('daily','profit')" id="daily-th-profit">กำไร (Net) <span class="sort-icon">⇅</span></th>
+                            <th class="sortable text-right" onclick="sortTable('daily','margin')" id="daily-th-margin">Margin <span class="sort-icon">⇅</span></th>
                         </tr>
                     </thead>
                     <tbody id="daily-performance-body">
