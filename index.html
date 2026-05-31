@@ -16,6 +16,9 @@
 <!-- ApexCharts for Modern Dashboard -->
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
+<!-- ECharts for Thailand choropleth map -->
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+
 <!-- Lottie Player -->
 <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
 
@@ -890,9 +893,9 @@
             <div style="height:340px" id="locationProvinceChart"></div>
           </div>
           <div class="card" style="height:400px;">
-            <h3 style="margin-bottom:4px; font-size:14px;">สัดส่วนออเดอร์รายภาค</h3>
-            <p class="sub" style="margin-bottom:8px; font-size:12px;">ลูกค้ากระจายอยู่ภูมิภาคใดบ้าง</p>
-            <div style="height:340px" id="locationRegionChart"></div>
+            <h3 style="margin-bottom:4px; font-size:14px;">แผนที่ความหนาแน่นลูกค้ารายจังหวัด</h3>
+            <p class="sub" style="margin-bottom:8px; font-size:12px;">เฉดสีเข้ม = ออเดอร์น้อย, เฉดสีเหลือง = ออเดอร์มาก (โทนสีเป็นมิตรกับผู้มีภาวะตาบอดสี)</p>
+            <div style="height:340px; position:relative;" id="locationThailandMap"></div>
           </div>
         </div>
 
