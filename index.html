@@ -864,6 +864,58 @@
         </div>
       </div>
 
+      <!-- Customer Location Insights -->
+      <div id="location-insights-section" class="card" style="margin-bottom:24px; display:none;">
+        <div class="flex-between" style="margin-bottom:16px">
+          <div>
+            <h3 style="margin:0; font-size:16px; color:var(--text); display:flex; align-items:center; gap:8px;">
+              <span class="material-symbols-rounded" style="color:var(--primary)">location_on</span>
+              ข้อมูลเชิงลึกพื้นที่ลูกค้า (Customer Location Insights)
+            </h3>
+            <p style="margin:4px 0 0 0; font-size:12px; color:var(--text-muted)">วิเคราะห์ว่าลูกค้าที่สั่งซื้อเข้ามาอยู่จังหวัด/ภาคไหนมากที่สุด (นับเฉพาะออเดอร์ที่ไม่ถูกยกเลิก)</p>
+          </div>
+        </div>
+
+        <div class="grid4" style="margin-bottom:20px;">
+          <div class="metric"><div class="label">จังหวัดที่สั่งมากที่สุด 🏆</div><div class="value" id="loc-top-province" style="font-size:22px;">-</div><div style="font-size:11px; color:var(--text-faint); margin-top:4px;" id="loc-top-province-sub">-</div></div>
+          <div class="metric"><div class="label">ภาคที่มียอดสั่งสูงสุด</div><div class="value blue" id="loc-top-region" style="font-size:22px;">-</div><div style="font-size:11px; color:var(--text-faint); margin-top:4px;" id="loc-top-region-sub">-</div></div>
+          <div class="metric"><div class="label">จำนวนจังหวัดที่ครอบคลุม</div><div class="value green" id="loc-province-count" style="font-size:22px;">-</div><div style="font-size:11px; color:var(--text-faint); margin-top:4px;" id="loc-province-count-sub">-</div></div>
+          <div class="metric"><div class="label">หมายเหตุ</div><div style="font-size:12px; color:var(--text-muted); margin-top:6px; line-height:1.5;">ใช้ที่อยู่จัดส่งจากไฟล์ Order<br/>(คอลัมน์จังหวัด/อำเภอ)</div></div>
+        </div>
+
+        <div class="grid2" style="margin-bottom:8px;">
+          <div class="card" style="height:400px;">
+            <h3 style="margin-bottom:4px; font-size:14px;">10 อันดับจังหวัดที่สั่งซื้อมากสุด</h3>
+            <p class="sub" style="margin-bottom:8px; font-size:12px;">จัดอันดับตามจำนวนออเดอร์</p>
+            <div style="height:340px" id="locationProvinceChart"></div>
+          </div>
+          <div class="card" style="height:400px;">
+            <h3 style="margin-bottom:4px; font-size:14px;">สัดส่วนออเดอร์รายภาค</h3>
+            <p class="sub" style="margin-bottom:8px; font-size:12px;">ลูกค้ากระจายอยู่ภูมิภาคใดบ้าง</p>
+            <div style="height:340px" id="locationRegionChart"></div>
+          </div>
+        </div>
+
+        <div class="scroll-x" style="margin-top:8px; max-height:360px; overflow-y:auto;">
+          <table style="width:100%; border-collapse:collapse;">
+            <thead>
+              <tr style="border-bottom:1px solid var(--border)">
+                <th style="text-align:left; padding:12px 8px; font-size:13px; color:var(--text-muted)">จังหวัด</th>
+                <th style="text-align:left; padding:12px 8px; font-size:13px; color:var(--text-muted)">ภาค</th>
+                <th style="text-align:center; padding:12px 8px; font-size:13px; color:var(--text-muted)">ออเดอร์</th>
+                <th style="text-align:center; padding:12px 8px; font-size:13px; color:var(--text-muted)">จำนวนชิ้น</th>
+                <th style="text-align:right; padding:12px 8px; font-size:13px; color:var(--text-muted)">ยอดรายรับ (Income)</th>
+                <th style="text-align:right; padding:12px 8px; font-size:13px; color:var(--text-muted)">เฉลี่ย/ออเดอร์</th>
+                <th style="text-align:right; padding:12px 8px; font-size:13px; color:var(--text-muted)">% ยอดขาย</th>
+              </tr>
+            </thead>
+            <tbody id="loc-province-tbody">
+              <tr><td colspan="7" style="text-align:center; padding:24px; color:var(--text-faint)">รอการคำนวณข้อมูล...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <div id="ads-summary-dashboard" class="grid2" style="margin-bottom:16px; display:none;">
         <div class="card metric" style="background:var(--red-light); border-color:var(--red); padding: 20px;">
           <p class="label" style="color:var(--red); font-size: 13px; font-weight: 700;">รวมค่าโฆษณา Shopee Ads (฿)</p>
